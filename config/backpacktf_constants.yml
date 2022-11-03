@@ -1,0 +1,6 @@
+base: https://backpack.tf/api
+operations:
+  user_info: /users/info/v1
+  price_schema: /IGetPrices/v4
+  price_history: /IGetPriceHistory/v1
+  get_listing: /classifieds/listings/snapshot
