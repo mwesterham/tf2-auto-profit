@@ -1,9 +1,14 @@
 var key_value_in_metal;
 var table;
 var running_index = 0;
+
 const COLLECTORS_INDEX = 5;
 const STRANGE_INDEX = 11;
 const UNIQUE_INDEX = 6;
+
+const warnAlert = $('<div id="listing_alert_warn" class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Beginning...</strong> Calling apis and populating information.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
+
+const successAlert = $('<div id="listing_alert_finish" class="alert alert-success alert-dismissible fade show" role="alert"><strong>Finished!</strong> All found listings have been loaded.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
 
 // On document ready
 $(async function() {
@@ -83,6 +88,9 @@ async function displayProfitables() {
   running_index = running_index + 1;
   const this_index = running_index;
 
+  $("#alerts").append(warnAlert.clone().delay(10000).slideUp(2000, function() {
+    $(this).alert('close');
+  }));
   table.clear();
 
   // Price definitions and min and max
@@ -141,6 +149,9 @@ async function displayProfitables() {
       ] ).draw( false );
     }
   }
+  $("#alerts").append(successAlert.clone().clone().delay(10000).slideUp(2000, function() {
+    $(this).alert('close');
+  }));
 }
 
 async function parseInfo(all_items, item, index) {
