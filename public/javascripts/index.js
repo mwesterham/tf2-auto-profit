@@ -1,11 +1,15 @@
 var key_value_in_metal;
+var table
 const COLLECTORS_INDEX = 5;
 const STRANGE_INDEX = 11;
 const UNIQUE_INDEX = 6;
 
 // On document ready
 $(async function() {
-  $('#item_table').hide();
+  table = $('#item_table').DataTable({
+    pageLength: 5,
+    order: [[4, 'desc']],
+  });
   await displayCurrencies();
   await displayProfiles();
 });
@@ -29,17 +33,19 @@ async function displayProfiles() {
     }
   });
   const json_result = result.data;
-  for(let id in json_result["users"]) {
-    var user = json_result["users"][id];
-    var profile_div = buildProfileDiv(id, user)
-    $('#profiles').prepend(profile_div);
-  }
-}
 
-function buildProfileDiv(id, user) {
   var row_parent = $("<div>", {
     class: "row formatted-row",
   });
+  for(let id in json_result["users"]) {
+    var user = json_result["users"][id];
+    var profile_div = buildProfileDiv(row_parent, id, user);
+  }
+  $('#profiles').prepend(profile_div);
+}
+
+function buildProfileDiv(row_parent, id, user) {
+  
   var col1 = $("<div>", {
     class: "col-auto",
   });
@@ -61,15 +67,20 @@ function buildProfileDiv(id, user) {
   var metal_div = $('<div> Metal: '+tf2_inventory["metal"].toFixed(2)+"</div>");
   var item_val_metal = tf2_inventory["value"] - tf2_inventory["keys"]*key_value_in_metal - tf2_inventory["metal"];
   var item_value_div = $('<div> Items value: '+item_val_metal.toFixed(2)+"</div>");
+  var slots = $('<div> Slots: '+tf2_inventory["slots"]["used"]+"/"+tf2_inventory["slots"]["total"]+"</div>");
 
   col1.append(image);
-  col2.append(name_div, value_div, item_value_div, keys_div, metal_div);
+  col2.append(name_div, value_div, item_value_div, keys_div, metal_div, slots);
 
   row_parent.append(col1, col2);
   return row_parent;
 }
 
 async function displayProfitables() {
+  table.clear();
+
+  var min = $("#min_metal").val();
+  var max = $("#max_metal").val();
   const result = await axios({
     url: '/get_prices',
     method: 'GET',
@@ -87,20 +98,27 @@ async function displayProfitables() {
     const prices = all_items[item]["prices"];
     for(var index in prices) {
       var info = await parseInfo(all_items, item, index);
-      
-      var name_div = $("<td>" + info.item + "</td>");
-      var quality_div = $("<td>" + info.quality + "</td>");
-      var price_div = $("<td>" + info.price + "</td>");
+      if(info.quality && info.price && min <= info.price && info.price <= max) {
+        await delay(1500);
+        const name = info.quality + " " + item;
+        const listings = await getListings(name);
 
-      var row_parent = $("<tr>");
-      row_parent.append(name_div, quality_div, price_div);
-      
-      if(info.quality && info.price)
-        item_table.append(row_parent);
+        if(listings["listings"]) {
+          var price = listings["listings"][0]["price"];
+          var profit_threshold = info.price * 0.8;
+          var potentialProfit = profit_threshold - parseFloat(price);
+          table.row.add( [
+            name,
+            info.price.toFixed(2),
+            profit_threshold.toFixed(2),
+            price.toFixed(2),
+            potentialProfit.toFixed(2),
+          ] ).draw( false );
+        }
+      }
     }
   }
   $('#item_table').show();
-  $('#item_table').dataTable();
 }
 
 async function parseInfo(all_items, item, index) {
@@ -137,11 +155,18 @@ async function parseInfo(all_items, item, index) {
   }
 }
 
-async function getListings() {
+async function getListings(item) {
   const result = await axios({
     url: '/get_listing',
     method: 'GET',
+    params: {
+      sku: item,
+    }
   });
   const json_result = result.data;
-  console.log(json_result);
+  return json_result;
+}
+
+function delay(time) {
+  return new Promise(resolve => setTimeout(resolve, time));
 }

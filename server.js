@@ -84,11 +84,11 @@ app.get('/get_prices', async function (req, res) {
          method: 'GET',
          params: {
             key: process.env.BPTF_API_KEY,
-            "item": sku,
-            "quality": quality,
-            "priceindex": "0",
-            "tradable": "Tradable",
-            "craftable": "Craftable",
+            item: sku,
+            quality: quality,
+            priceindex: "0",
+            tradable: "Tradable",
+            craftable: "Craftable",
          }
       });
       res.send(result.data);
@@ -98,14 +98,15 @@ app.get('/get_prices', async function (req, res) {
    }
 })
 app.get('/get_listing', async function (req, res) {
+   const sku = req.query.sku;
    try {
       const result = await axios({
          url: backpackURLs["base"] + backpackURLs["operations"]["get_listing"],
          method: 'GET',
          params: {
             token: process.env.BPTF_API_TOKEN,
-            "sku": "Flavorful Baggies",
-            "appid": "440",
+            sku: sku,
+            appid: "440",
          }
       });
       res.send(result.data);
@@ -123,27 +124,3 @@ var server = httpsServer.listen(3000, function () {
    
    logger.debug("Example app listening at http://%s:%s", host, port)
 })
-
-
-//  axios({
-//    url: backpackURLs["base"] + backpackURLs["operations"]["get_listing"],
-//    method: 'GET',
-//    params: {
-//       token: process.env.BPTF_API_TOKEN,
-//    },
-//    data: {
-//       key: process.env.BPTF_API_KEY,
-//       sku: "Strange Killstreak Rocket Launcher",
-//       appid: 440
-//    },
-//    header: {
-//       "User-Agent": "myBot"
-//    }
-// })
-//  .then(res => res.json())
-//  .then(json_result => {
-//    $("#result2").html(JSON.stringify(json_result));
-//  })
-//  .catch(function(err) {
-//    console.log(`Error: ${err}` )
-//  });

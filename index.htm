@@ -25,15 +25,22 @@
       <div id="profiles" class="container"></div>
     </div>
 
+    <div class="input-group">
+      <span class="input-group-text">Min and Max</span>
+      <input type="number" class="form-control" id="min_metal" value="200">
+      <input type="number" class="form-control" id="max_metal" value="204">
+    </div>
+
     <button id="buttonclick2" onclick="displayProfitables()">Get item price</button>
-    <button id="buttonclick2" onclick="getListings()">Get listing price</button>
 
     <table class="table" id="item_table">
       <thead>
         <tr>
           <th scope="col">Item Name</th>
-          <th scope="col">Quality</th>
           <th scope="col">Price (metal)</th>
+          <th scope="col">Minimum Needed (metal)</th>
+          <th scope="col">Lowest Listing (metal)</th>
+          <th scope="col">Potential Profit (metal)</th>
         </tr>
       </thead>
       <tbody id="item_table_body"></tbody>
