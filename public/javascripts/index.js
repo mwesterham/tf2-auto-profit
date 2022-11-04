@@ -124,6 +124,10 @@ async function displayProfitables() {
 
     await delay(1100);
 
+    // kill if this process is not the running index
+    if(this_index != running_index)
+      return;
+
     if(listings["listings"] && listings["listings"][0]["intent"] == "sell") {
       var price = listings["listings"][0]["price"];
       var profit_threshold = info.price * 0.8;
@@ -136,10 +140,6 @@ async function displayProfitables() {
         potentialProfit.toFixed(2),
       ] ).draw( false );
     }
-
-    // kill if this process is not the running index
-    if(this_index != running_index)
-      return;
   }
 }
 
