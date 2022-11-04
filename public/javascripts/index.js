@@ -1,5 +1,6 @@
 var key_value_in_metal;
-var table
+var table;
+var running_index = 0;
 const COLLECTORS_INDEX = 5;
 const STRANGE_INDEX = 11;
 const UNIQUE_INDEX = 6;
@@ -12,6 +13,7 @@ $(async function() {
   });
   await displayCurrencies();
   await displayProfiles();
+  displayProfitables();
 });
 
 async function displayCurrencies() {
@@ -77,48 +79,68 @@ function buildProfileDiv(row_parent, id, user) {
 }
 
 async function displayProfitables() {
+  // mechanism to kill any process that is already running
+  running_index = running_index + 1;
+  const this_index = running_index;
+
   table.clear();
 
+  // Price definitions and min and max
   var min = $("#min_metal").val();
   var max = $("#max_metal").val();
   const result = await axios({
     url: '/get_prices',
     method: 'GET',
-    params: {
-      sku: "Flavorful Baggies",
-      quality: "Unique",
-    }
   });
   const json_result = result.data;
   const all_items = json_result["response"]["items"];
-  console.log(all_items);
 
-  const item_table = $('#item_table_body');
+  // Construct the item objects
+  var all_item_infos = [];
   for(var item in all_items) {
     const prices = all_items[item]["prices"];
     for(var index in prices) {
       var info = await parseInfo(all_items, item, index);
-      if(info.quality && info.price && min <= info.price && info.price <= max) {
-        await delay(1500);
-        const name = info.quality + " " + item;
-        const listings = await getListings(name);
+      all_item_infos.push(info);
+    }
+  }
 
-        if(listings["listings"]) {
-          var price = listings["listings"][0]["price"];
-          var profit_threshold = info.price * 0.8;
-          var potentialProfit = profit_threshold - parseFloat(price);
-          table.row.add( [
-            name,
-            info.price.toFixed(2),
-            profit_threshold.toFixed(2),
-            price.toFixed(2),
-            potentialProfit.toFixed(2),
-          ] ).draw( false );
-        }
+  // Query the listings of each object
+  function* listingsGenerator(all_item_infos, min, max) {
+    for(let i in all_item_infos) {
+      const info = all_item_infos[i];
+      if(info.quality && info.price && min <= info.price && info.price <= max) {
+        var query_name = info.item;
+        if(info.quality != "Unique")
+          query_name = info.quality + " " + query_name;
+        yield getListings(info, query_name);
       }
     }
   }
-  $('#item_table').show();
+
+  for (const listing_promise of listingsGenerator(all_item_infos, min, max)) {
+    const listings = await listing_promise;
+    const info = listings.metainfo;
+
+    await delay(1100);
+
+    if(listings["listings"] && listings["listings"][0]["intent"] == "sell") {
+      var price = listings["listings"][0]["price"];
+      var profit_threshold = info.price * 0.8;
+      var potentialProfit = profit_threshold - parseFloat(price);
+      table.row.add( [
+        info.quality + " " + info.item,
+        info.price.toFixed(2),
+        profit_threshold.toFixed(2),
+        price.toFixed(2),
+        potentialProfit.toFixed(2),
+      ] ).draw( false );
+    }
+
+    // kill if this process is not the running index
+    if(this_index != running_index)
+      return;
+  }
 }
 
 async function parseInfo(all_items, item, index) {
@@ -155,7 +177,7 @@ async function parseInfo(all_items, item, index) {
   }
 }
 
-async function getListings(item) {
+async function getListings(info, item) {
   const result = await axios({
     url: '/get_listing',
     method: 'GET',
@@ -164,6 +186,7 @@ async function getListings(item) {
     }
   });
   const json_result = result.data;
+  json_result.metainfo = info;
   return json_result;
 }
 

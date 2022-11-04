@@ -58,6 +58,7 @@ app.get('/get_profile', async function (req, res) {
    }
    catch(error) {
       logger.debug(error);
+      logger.debug(error.response.data);
    }
 })
 app.get('/get_currency', async function (req, res) {
@@ -73,32 +74,31 @@ app.get('/get_currency', async function (req, res) {
    }
    catch(error) {
       logger.debug(error);
+      logger.debug(error.response.data);
    }
 })
 app.get('/get_prices', async function (req, res) {
-   var sku = req.query.sku;
-   var quality = req.query.quality;
    try {
       const result = await axios({
          url: backpackURLs["base"] + backpackURLs["operations"]["price_schema"],
          method: 'GET',
          params: {
             key: process.env.BPTF_API_KEY,
-            item: sku,
-            quality: quality,
-            priceindex: "0",
-            tradable: "Tradable",
-            craftable: "Craftable",
          }
       });
       res.send(result.data);
    }
    catch(error) {
       logger.debug(error);
+      logger.debug(error.response.data);
    }
 })
 app.get('/get_listing', async function (req, res) {
    const sku = req.query.sku;
+   const quality = req.query.quality || undefined;
+   const priceindex = req.query.priceindex || 0;
+   const craftable = req.query.craftable || undefined;
+   const tradable = req.query.tradable || undefined;
    try {
       const result = await axios({
          url: backpackURLs["base"] + backpackURLs["operations"]["get_listing"],
@@ -107,12 +107,17 @@ app.get('/get_listing', async function (req, res) {
             token: process.env.BPTF_API_TOKEN,
             sku: sku,
             appid: "440",
+            quality: quality,
+            priceindex: priceindex,
+            tradable: tradable,
+            craftable: craftable,
          }
       });
       res.send(result.data);
    }
    catch(error) {
       logger.debug(error);
+      logger.debug(error.response.data);
    }
 })
 

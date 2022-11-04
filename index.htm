@@ -27,11 +27,11 @@
 
     <div class="input-group">
       <span class="input-group-text">Min and Max</span>
-      <input type="number" class="form-control" id="min_metal" value="200">
-      <input type="number" class="form-control" id="max_metal" value="204">
+      <input type="number" class="form-control" id="min_metal" value="15">
+      <input type="number" class="form-control" id="max_metal" value="200">
     </div>
 
-    <button id="buttonclick2" onclick="displayProfitables()">Get item price</button>
+    <button id="buttonclick2" class="btn btn-primary" onclick="displayProfitables()">Begin refresh</button>
 
     <table class="table" id="item_table">
       <thead>
@@ -43,7 +43,7 @@
           <th scope="col">Potential Profit (metal)</th>
         </tr>
       </thead>
-      <tbody id="item_table_body"></tbody>
+      <tbody></tbody>
     </table>
 
   </body>
