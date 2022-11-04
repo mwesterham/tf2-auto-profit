@@ -22,7 +22,7 @@ var app = express();
 // Load static files
 app.use(express.static(__dirname + '/node_modules/bootstrap/dist'));
 app.use('/jquery', express.static(__dirname + '/node_modules/jquery/dist/'));
-app.use('/js-yaml', express.static(__dirname + '/node_modules/js-yaml/dist/'));
+app.use('/axios', express.static(__dirname + '/node_modules/axios/dist/'));
 app.use(express.static('public'));
 
 app.get('/', function (req, res) {
@@ -44,14 +44,14 @@ app.get('/info', function (req, res) {
 
 // External API calls callable via javascript
 app.get('/get_profile', async function (req, res) {
-   var profile = req.query.profile;
+   var ids = req.query.steamids;
    try {
       const result = await axios({
          url: backpackURLs["base"] + backpackURLs["operations"]["user_info"],
          method: 'GET',
          params: {
             key: process.env.BPTF_API_KEY,
-            "steamids": "76561198080592800",
+            steamids: ids,
          }
       });
       res.send(result.data);
@@ -60,15 +60,32 @@ app.get('/get_profile', async function (req, res) {
       logger.debug(error);
    }
 })
-app.get('/get_price_history', async function (req, res) {
+app.get('/get_currency', async function (req, res) {
    try {
       const result = await axios({
-         url: backpackURLs["base"] + backpackURLs["operations"]["price_history"],
+         url: backpackURLs["base"] + backpackURLs["operations"]["get_currency"],
          method: 'GET',
          params: {
             key: process.env.BPTF_API_KEY,
-            "item": "Flavorful Baggies",
-            "quality": "Unique",
+         }
+      });
+      res.send(result.data);
+   }
+   catch(error) {
+      logger.debug(error);
+   }
+})
+app.get('/get_prices', async function (req, res) {
+   var sku = req.query.sku;
+   var quality = req.query.quality;
+   try {
+      const result = await axios({
+         url: backpackURLs["base"] + backpackURLs["operations"]["price_schema"],
+         method: 'GET',
+         params: {
+            key: process.env.BPTF_API_KEY,
+            "item": sku,
+            "quality": quality,
             "priceindex": "0",
             "tradable": "Tradable",
             "craftable": "Craftable",

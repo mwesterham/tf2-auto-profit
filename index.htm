@@ -7,18 +7,35 @@
     <link rel="stylesheet" href="stylesheets/index.css" type="text/css">
 
     <script src="jquery/jquery.js"></script>
-    <script src="js-yaml/js-yaml.js"></script>
+    <script src="axios/axios.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="javascripts/index.js" charset="utf-8"></script>
     
   </head>
   <body>
-    <button id="buttonclick1" onclick="displayProfile()">Get Profile</button>
-    <div id="result"></div>
+    <div id="top" class="container">
+      <div class="container">
+        <div class="row formatted-row">
+          <div id="currency_prices" class="col"></div>
+        </div>
+      </div>
+
+      <div id="profiles" class="container"></div>
+    </div>
 
     <button id="buttonclick2" onclick="displayProfitables()">Get item price</button>
     <button id="buttonclick2" onclick="getListings()">Get listing price</button>
-    <div id="result2"></div>
-    <div id="result2_2"></div>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Item Name</th>
+          <th scope="col">Quality</th>
+          <th scope="col">Price</th>
+        </tr>
+      </thead>
+      <tbody id="item_table"></tbody>
+    </table>
+
   </body>
 </html>
