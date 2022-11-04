@@ -5,6 +5,7 @@ const UNIQUE_INDEX = 6;
 
 // On document ready
 $(async function() {
+  $('#item_table').hide();
   await displayCurrencies();
   await displayProfiles();
 });
@@ -81,43 +82,59 @@ async function displayProfitables() {
   const all_items = json_result["response"]["items"];
   console.log(all_items);
 
-  const item_table = $('#item_table');
+  const item_table = $('#item_table_body');
   for(var item in all_items) {
     const prices = all_items[item]["prices"];
     for(var index in prices) {
+      var info = await parseInfo(all_items, item, index);
+      
+      var name_div = $("<td>" + info.item + "</td>");
+      var quality_div = $("<td>" + info.quality + "</td>");
+      var price_div = $("<td>" + info.price + "</td>");
+
       var row_parent = $("<tr>");
-      var name_div = $("<td>"+item+"</td>");
-
-      var quality, price;
-      try {
-        switch(parseInt(index)) {
-          // case COLLECTORS_INDEX:
-          //   quality = "Collectors";
-          //   const item_price = prices[index]["Tradable"]["Craftable"][0];
-          //   price = item_price["value"] + " " + item_price["currency"];
-          //   break;
-          case STRANGE_INDEX:
-            quality = "Strange";
-            let item_price_s = prices[index]["Tradable"]["Craftable"][0];
-            price = item_price_s["value"] + " " + item_price_s["currency"];
-            break;
-          case UNIQUE_INDEX:
-            quality = "Unique";
-            let item_price_u = prices[index]["Tradable"]["Craftable"][0];
-            price = item_price_u["value"] + " " + item_price_u["currency"];
-            break;
-        }
-      }
-      catch(e) {
-        console.log("[Error for " + item + "with quality " + quality + "] " + e)
-      }
-      var quality_div = $("<td>"+quality+"</td>");
-      var price_div = $("<td>"+price+"</td>");
-
       row_parent.append(name_div, quality_div, price_div);
-      item_table.append(row_parent);
+      
+      if(info.quality && info.price)
+        item_table.append(row_parent);
     }
-  }    
+  }
+  $('#item_table').show();
+  $('#item_table').dataTable();
+}
+
+async function parseInfo(all_items, item, index) {
+  try {
+    const prices = all_items[item]["prices"];
+    var quality, price;
+
+    let item_price = prices[index]["Tradable"]["Craftable"][0]
+    price = parseFloat(item_price["value"]);
+
+  
+    switch(parseInt(index)) {
+      case STRANGE_INDEX:
+        quality = "Strange";
+        break;
+      case UNIQUE_INDEX:
+        quality = "Unique";
+        break;
+    }
+
+    if(item_price["currency"] == "keys")
+      price = price * key_value_in_metal;
+    else if (item_price["currency"] != "metal")
+      price = undefined
+  }
+  catch(e) {
+    console.log("[Error for " + item + "with quality " + quality + "] " + e)
+  }
+  
+  return {
+    item: item,
+    quality: quality, 
+    price: price,
+  }
 }
 
 async function getListings() {

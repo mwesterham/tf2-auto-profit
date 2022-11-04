@@ -5,10 +5,12 @@
 
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="stylesheets/index.css" type="text/css">
-
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css" type="text/css">
+    
     <script src="jquery/jquery.js"></script>
     <script src="axios/axios.js"></script>
     <script src="js/bootstrap.min.js"></script>
+    <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
     <script src="javascripts/index.js" charset="utf-8"></script>
     
   </head>
@@ -26,15 +28,15 @@
     <button id="buttonclick2" onclick="displayProfitables()">Get item price</button>
     <button id="buttonclick2" onclick="getListings()">Get listing price</button>
 
-    <table class="table">
+    <table class="table" id="item_table">
       <thead>
         <tr>
           <th scope="col">Item Name</th>
           <th scope="col">Quality</th>
-          <th scope="col">Price</th>
+          <th scope="col">Price (metal)</th>
         </tr>
       </thead>
-      <tbody id="item_table"></tbody>
+      <tbody id="item_table_body"></tbody>
     </table>
 
   </body>
