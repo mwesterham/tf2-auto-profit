@@ -13,6 +13,7 @@ const successAlert = $('<div id="listing_alert_finish" class="alert alert-succes
 // On document ready
 $(async function() {
   table = $('#item_table').DataTable({
+    lengthChange: false,
     pageLength: 5,
     order: [[4, 'desc']],
   });
@@ -68,8 +69,8 @@ function buildProfileDiv(row_parent, id, user) {
   });
 
   const tf2_inventory = user["inventory"][440];
-  var name_div = $('<div><b>'+user["name"]+"</b></div>");
-  var value_div = $('<div> Total value: '+tf2_inventory["value"].toFixed(2)+"</div>");
+  var name_div = $(`<div><a href="${"https://backpack.tf/profiles/"+id}" target="_blank">${user["name"]}</a></div>`);
+  var value_div = $(`<div> Total value: ${tf2_inventory["value"].toFixed(2)}</div>`);
   var keys_div = $('<div> Keys: '+tf2_inventory["keys"].toFixed(2)+"</div>");
   var metal_div = $('<div> Metal: '+tf2_inventory["metal"].toFixed(2)+"</div>");
   var item_val_metal = tf2_inventory["value"] - tf2_inventory["keys"]*key_value_in_metal - tf2_inventory["metal"];
@@ -141,7 +142,7 @@ async function displayProfitables() {
       var profit_threshold = info.price * 0.8;
       var potentialProfit = profit_threshold - parseFloat(price);
       table.row.add( [
-        info.quality + " " + info.item,
+        `<a href="${buildBptfLink(info)}" target="_blank">${info.quality} ${info.item} </a>`,
         info.price.toFixed(2),
         profit_threshold.toFixed(2),
         price.toFixed(2),
@@ -149,9 +150,7 @@ async function displayProfitables() {
       ] ).draw( false );
     }
   }
-  $("#alerts").append(successAlert.clone().clone().delay(10000).slideUp(2000, function() {
-    $(this).alert('close');
-  }));
+  $("#alerts").append(successAlert.clone());
 }
 
 async function parseInfo(all_items, item, index) {
@@ -199,6 +198,10 @@ async function getListings(info, item) {
   const json_result = result.data;
   json_result.metainfo = info;
   return json_result;
+}
+
+function buildBptfLink(info) {
+  return `https://backpack.tf/stats/${info.quality}/${info.item}/Tradable/Craftable`;
 }
 
 function delay(time) {

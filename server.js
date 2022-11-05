@@ -58,7 +58,7 @@ app.get('/get_profile', async function (req, res) {
    }
    catch(error) {
       logger.debug(error);
-      logger.debug(error.response.data);
+      res.send("An error occured.");
    }
 })
 app.get('/get_currency', async function (req, res) {
@@ -74,7 +74,7 @@ app.get('/get_currency', async function (req, res) {
    }
    catch(error) {
       logger.debug(error);
-      logger.debug(error.response.data);
+      res.send("An error occured.");
    }
 })
 app.get('/get_prices', async function (req, res) {
@@ -90,7 +90,7 @@ app.get('/get_prices', async function (req, res) {
    }
    catch(error) {
       logger.debug(error);
-      logger.debug(error.response.data);
+      res.send("An error occured.");
    }
 })
 app.get('/get_listing', async function (req, res) {
@@ -117,7 +117,7 @@ app.get('/get_listing', async function (req, res) {
    }
    catch(error) {
       logger.debug(error);
-      logger.debug(error.response.data);
+      res.send("An error occured.");
    }
 })
 
