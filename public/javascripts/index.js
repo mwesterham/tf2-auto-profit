@@ -104,6 +104,12 @@ async function displayProfitables() {
   const json_result = result.data;
   const all_items = json_result["response"]["items"];
 
+  const ignored_response = await axios({
+    url: '/get_ignore',
+    method: 'GET',
+  });
+  const ignored = ignored_response.data;
+
   // Construct the item objects
   var all_item_infos = [];
   for(var item in all_items) {
@@ -118,7 +124,11 @@ async function displayProfitables() {
   function* listingsGenerator(all_item_infos, min, max) {
     for(let i in all_item_infos) {
       const info = all_item_infos[i];
-      if(info.quality && info.price && min <= info.price && info.price <= max) {
+
+      // check if the the item has some of the ignored terms
+      const isIgnored = ignored.some(term => info.item.includes(term))
+
+      if(!isIgnored && info.quality && info.price && min <= info.price && info.price <= max) {
         var query_name = info.item;
         if(info.quality != "Unique")
           query_name = info.quality + " " + query_name;

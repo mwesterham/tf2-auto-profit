@@ -14,6 +14,7 @@ var credentials = {key: privateKey, cert: certificate};
 // Get config
 var _backpackURLs = fs.readFileSync('config/backpacktf_constants.yml', 'utf8');
 var backpackURLs = jsyaml.load(_backpackURLs);
+var ignoredItems = fs.readFileSync('config/ignore.json', 'utf8');
 
 // App initialization
 var express = require('express');
@@ -120,6 +121,9 @@ app.get('/get_listing', async function (req, res) {
       res.send("An error occured.");
    }
 })
+app.get('/get_ignore', async function (req, res) {
+   res.send(ignoredItems);
+});
 
 // Build server
 var httpsServer = https.createServer(credentials, app);
