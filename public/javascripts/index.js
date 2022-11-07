@@ -17,10 +17,17 @@ $(async function() {
     pageLength: 5,
     order: [[4, 'desc']],
   });
-  await displayCurrencies();
-  await displayProfiles();
+  await refreshKeyProfiles();
   displayProfitables();
 });
+
+async function refreshKeyProfiles() {
+  $('#profiles').empty();
+  $('#currency_prices').empty();
+  await delay(500); // Helps visually show the refresh
+  await displayCurrencies();
+  await displayProfiles();
+}
 
 async function displayCurrencies() {
   const result = await axios({
