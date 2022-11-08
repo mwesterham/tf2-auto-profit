@@ -5,6 +5,7 @@ var running_index = 0;
 const COLLECTORS_INDEX = 5;
 const STRANGE_INDEX = 11;
 const UNIQUE_INDEX = 6;
+const GENUINE_INDEX = 1;
 
 const warnAlert = $('<div id="listing_alert_warn" class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Beginning...</strong> Calling apis and populating information.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
 
@@ -20,6 +21,13 @@ $(async function() {
   await refreshKeyProfiles();
   displayProfitables();
 });
+
+async function manualSetKeyVal() {
+  var val = $("#key_val").val();
+  $('#currency_prices').empty();
+  $('#currency_prices').append($("<div>Keys: "+val+" Metal</div>"));
+  key_value_in_metal = val;
+}
 
 async function refreshKeyProfiles() {
   $('#profiles').empty();
@@ -155,16 +163,27 @@ async function displayProfitables() {
       return;
 
     if(listings["listings"] && listings["listings"][0]["intent"] == "sell") {
-      var price = listings["listings"][0]["price"];
-      var profit_threshold = info.price * 0.8;
-      var potentialProfit = profit_threshold - parseFloat(price);
-      table.row.add( [
-        `<a href="${buildBptfLink(info)}" target="_blank">${info.quality} ${info.item} </a>`,
-        info.price.toFixed(2),
-        profit_threshold.toFixed(2),
-        price.toFixed(2),
-        potentialProfit.toFixed(2),
-      ] ).draw( false );
+      // Calculate price manually since bptf prices for keys are not always up to snuff
+      var barterPrice = listings["listings"][0]["currencies"];
+      var price = undefined;
+      if(barterPrice["keys"] || barterPrice["metal"])
+        price = 0;
+      if(barterPrice["keys"])
+        price += barterPrice["keys"] * key_value_in_metal;
+      if(barterPrice["metal"])
+        price += barterPrice["metal"]
+      
+      if(price) {
+        var profit_threshold = info.price * 0.8;
+        var potentialProfit = profit_threshold - price;
+        table.row.add( [
+          `<a href="${buildBptfLink(info)}" target="_blank">${info.quality} ${info.item} </a>`,
+          info.price.toFixed(2),
+          profit_threshold.toFixed(2),
+          price.toFixed(2),
+          potentialProfit.toFixed(2),
+        ] ).draw( false );
+      }
     }
   }
   $("#alerts").append(successAlert.clone());
@@ -175,17 +194,21 @@ async function parseInfo(all_items, item, index) {
     const prices = all_items[item]["prices"];
     var quality, price;
 
+    index = parseInt(index);
     let item_price = prices[index]["Tradable"]["Craftable"][0]
     price = parseFloat(item_price["value"]);
 
   
-    switch(parseInt(index)) {
+    switch(index) {
       case STRANGE_INDEX:
         quality = "Strange";
         break;
       case UNIQUE_INDEX:
         quality = "Unique";
         break;
+      // case GENUINE_INDEX:
+      //   quality = "Genuine";
+      //   break;
     }
 
     if(item_price["currency"] == "keys")
@@ -194,7 +217,7 @@ async function parseInfo(all_items, item, index) {
       price = undefined
   }
   catch(e) {
-    console.log("[Error for " + item + "with quality " + quality + "] " + e)
+    console.log("[Error for " + item + " with quality " + quality + "] " + e)
   }
   
   return {
