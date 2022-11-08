@@ -12,6 +12,8 @@ var certificate = fs.readFileSync('sslcert/server-localhost.pem', 'utf8');
 var credentials = {key: privateKey, cert: certificate};
 
 // Get config
+var _pricesURLs = fs.readFileSync('config/pricestf_constants.yml', 'utf8');
+var pricesURLs = jsyaml.load(_pricesURLs);
 var _backpackURLs = fs.readFileSync('config/backpacktf_constants.yml', 'utf8');
 var backpackURLs = jsyaml.load(_backpackURLs);
 var ignoredItems = fs.readFileSync('config/ignore.json', 'utf8');
@@ -63,19 +65,35 @@ app.get('/get_profile', async function (req, res) {
    }
 })
 app.get('/get_currency', async function (req, res) {
+   let auth_token;
    try {
+      // Get access token first
+      const response = await axios({
+         url: pricesURLs["base"] + pricesURLs["operations"]["auth_access"],
+         method: 'POST',
+      });
+      auth_token = response.data.accessToken;
+   }
+   catch(error) {
+      logger.debug(error);
+      res.send("An error occured getting auth token from prices tf.");
+   }
+
+   try {
+      // Get key prices
       const result = await axios({
-         url: backpackURLs["base"] + backpackURLs["operations"]["get_currency"],
+         url: pricesURLs["base"] + pricesURLs["operations"]["prices"] + "/" + encodeURIComponent("5021;6"),
          method: 'GET',
-         params: {
-            key: process.env.BPTF_API_KEY,
+         headers: {
+            accept: 'application/json',
+            authorization: 'Bearer ' + auth_token,
          }
       });
       res.send(result.data);
    }
    catch(error) {
       logger.debug(error);
-      res.send("An error occured.");
+      res.send("An error occured getting key price from prices tf.");
    }
 })
 app.get('/get_prices', async function (req, res) {

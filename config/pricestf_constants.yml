@@ -1,0 +1,4 @@
+base: https://api2.prices.tf
+operations:
+  auth_access: /auth/access
+  prices: /prices

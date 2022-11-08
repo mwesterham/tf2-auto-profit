@@ -42,9 +42,11 @@ async function displayCurrencies() {
     url: "/get_currency",
     method: 'GET',
   });
-  const key_vals = result.data["response"]["currencies"]["keys"]["price"];
-  $('#currency_prices').append($("<div>Keys: "+key_vals["value"]+"/"+key_vals["value_high"]+" "+key_vals["currency"]+"</div>"));
-  key_value_in_metal = key_vals["value"];
+  const key_vals = result.data;
+  const key_price_buy = (key_vals["buyHalfScrap"] / 18).toFixed(2);
+  const key_price_sell = (key_vals["sellHalfScrap"] / 18).toFixed(2);
+  $('#currency_prices').append($(`<div>Keys: ${key_price_buy}/${key_price_sell} metal</div>`));
+  key_value_in_metal = key_price_buy;
 }
 
 async function displayProfiles() {
