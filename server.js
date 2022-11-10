@@ -64,20 +64,23 @@ app.get('/get_profile', async function (req, res) {
       res.send("An error occured.");
    }
 })
-app.get('/get_currency', async function (req, res) {
-   let auth_token;
+app.get('/get_price_token', async function (req, res) {
    try {
       // Get access token first
       const response = await axios({
          url: pricesURLs["base"] + pricesURLs["operations"]["auth_access"],
          method: 'POST',
       });
-      auth_token = response.data.accessToken;
+      const auth_token = response.data.accessToken;
+      res.send(auth_token);
    }
    catch(error) {
       logger.debug(error);
       res.send("An error occured getting auth token from prices tf.");
    }
+})
+app.get('/get_currency', async function (req, res) {
+   const auth_token = req.query.token;
 
    try {
       // Get key prices
@@ -96,7 +99,28 @@ app.get('/get_currency', async function (req, res) {
       res.send("An error occured getting key price from prices tf.");
    }
 })
-app.get('/get_prices', async function (req, res) {
+app.get('/get_ptf_prices', async function (req, res) {
+   const auth_token = req.query.token;
+   const sku = req.query.sku;
+
+   try {
+      // Get key prices
+      const result = await axios({
+         url: pricesURLs["base"] + pricesURLs["operations"]["prices"] + "/" + sku,
+         method: 'GET',
+         headers: {
+            accept: 'application/json',
+            authorization: 'Bearer ' + auth_token,
+         }
+      });
+      res.send(result.data);
+   }
+   catch(error) {
+      logger.debug(error);
+      res.send("An error occured getting prices from prices tf.");
+   }
+})
+app.get('/get_bptf_prices', async function (req, res) {
    try {
       const result = await axios({
          url: backpackURLs["base"] + backpackURLs["operations"]["price_schema"],
@@ -114,10 +138,6 @@ app.get('/get_prices', async function (req, res) {
 })
 app.get('/get_listing', async function (req, res) {
    const sku = req.query.sku;
-   const quality = req.query.quality || undefined;
-   const priceindex = req.query.priceindex || 0;
-   const craftable = req.query.craftable || undefined;
-   const tradable = req.query.tradable || undefined;
    try {
       const result = await axios({
          url: backpackURLs["base"] + backpackURLs["operations"]["get_listing"],
@@ -126,10 +146,6 @@ app.get('/get_listing', async function (req, res) {
             token: process.env.BPTF_API_TOKEN,
             sku: sku,
             appid: "440",
-            quality: quality,
-            priceindex: priceindex,
-            tradable: tradable,
-            craftable: craftable,
          }
       });
       res.send(result.data);

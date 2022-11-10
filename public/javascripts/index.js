@@ -16,7 +16,7 @@ $(async function() {
   table = $('#item_table').DataTable({
     lengthChange: false,
     pageLength: 5,
-    order: [[4, 'desc']],
+    order: [[5, 'desc']],
   });
   await refreshKeyProfiles();
   displayProfitables();
@@ -38,9 +38,19 @@ async function refreshKeyProfiles() {
 }
 
 async function displayCurrencies() {
+  // Get prices tf token
+  const token_result = await axios({
+    url: '/get_price_token',
+    method: 'GET',
+  });
+  const token = token_result.data;
+
   const result = await axios({
     url: "/get_currency",
     method: 'GET',
+    params: {
+      token: token,
+    }
   });
   const key_vals = result.data;
   const key_price_buy = (key_vals["buyHalfScrap"] / 18).toFixed(2);
@@ -115,7 +125,7 @@ async function displayProfitables() {
   var min = $("#min_metal").val();
   var max = $("#max_metal").val();
   const result = await axios({
-    url: '/get_prices',
+    url: '/get_bptf_prices',
     method: 'GET',
   });
   const json_result = result.data;
@@ -131,6 +141,7 @@ async function displayProfitables() {
   var all_item_infos = [];
   for(var item in all_items) {
     const prices = all_items[item]["prices"];
+
     for(var index in prices) {
       var info = await parseInfo(all_items, item, index);
       all_item_infos.push(info);
@@ -145,7 +156,7 @@ async function displayProfitables() {
       // check if the the item has some of the ignored terms
       const isIgnored = ignored.some(term => info.item.includes(term))
 
-      if(!isIgnored && info.quality && info.price && min <= info.price && info.price <= max) {
+      if(!isIgnored && info.quality && info.bp_price && min <= info.bp_price && info.bp_price <= max) {
         var query_name = info.item;
         if(info.quality != "Unique")
           query_name = info.quality + " " + query_name;
@@ -176,11 +187,18 @@ async function displayProfitables() {
         price += barterPrice["metal"]
       
       if(price) {
-        var profit_threshold = info.price * 0.8;
+        const scraptf_price = info.bp_price * 0.94; // This is the pricing scheme of scrap.tf
+        var profit_threshold = scraptf_price * 0.8; // This is the pricing scheme of scrap.tf
         var potentialProfit = profit_threshold - price;
+
+        var sku_links = [];
+        for(let i = 0; i < info.skus.length; i++) {
+          sku_links.push(`<div><a href="${"https://prices.tf/items/" + info.skus[i]}" target="_blank">${info.skus[i]} </a></div>`);
+        }
         table.row.add( [
           `<a href="${buildBptfLink(info)}" target="_blank">${info.quality} ${info.item} </a>`,
-          info.price.toFixed(2),
+          sku_links.join("\n"),
+          scraptf_price.toFixed(2),
           profit_threshold.toFixed(2),
           price.toFixed(2),
           potentialProfit.toFixed(2),
@@ -222,10 +240,15 @@ async function parseInfo(all_items, item, index) {
     console.log("[Error for " + item + " with quality " + quality + "] " + e)
   }
   
+  const defindices = [];
+  for(let i = 0; i < all_items[item]["defindex"].length; i++) {
+    defindices.push(`${all_items[item]["defindex"][i]};${index}`);
+  }
   return {
     item: item,
+    skus: defindices,
     quality: quality, 
-    price: price,
+    bp_price: price,
   }
 }
 
@@ -240,6 +263,29 @@ async function getListings(info, item) {
   const json_result = result.data;
   json_result.metainfo = info;
   return json_result;
+}
+
+async function getPtfPrice(sku) {
+  // Get prices tf token
+  const token_result = await axios({
+    url: '/get_price_token',
+    method: 'GET',
+  });
+  const token = token_result.data;
+
+  // Call once to get the max num of items
+  const result = await axios({
+    url: '/get_ptf_prices',
+    method: 'GET',
+    params: {
+      token: token,
+      sku: sku,
+    }
+  });
+  const response = result.data;
+  const price_half_scrap = response["buyHalfScrap"] + response["buyKeys"] * response["buyKeyHalfScrap"]
+  const price_ref = (price_half_scrap / 18).toFixed(2);
+  return price_ref;
 }
 
 function buildBptfLink(info) {
