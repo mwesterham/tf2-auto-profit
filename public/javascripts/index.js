@@ -203,7 +203,7 @@ async function displayProfitables() {
       if(barterPrice["keys"] || barterPrice["metal"])
         price = 0;
       if(barterPrice["keys"])
-        price += barterPrice["keys"] * key_value_in_metal_prices;
+        price += barterPrice["keys"] * key_value_in_metal_scrap_upper; // use the upper scrap metal because this is how much it costs me
       if(barterPrice["metal"])
         price += barterPrice["metal"]
       
