@@ -1,4 +1,6 @@
-var key_value_in_metal;
+var key_value_in_metal_prices, key_value_in_metal_prices_upper;
+var key_value_in_metal_bptf, key_value_in_metal_bptf_upper;
+var key_value_in_metal_scrap, key_value_in_metal_scrap_upper;
 var table;
 var running_index = 0;
 
@@ -6,6 +8,9 @@ const COLLECTORS_INDEX = 5;
 const STRANGE_INDEX = 11;
 const UNIQUE_INDEX = 6;
 const GENUINE_INDEX = 1;
+
+const SCRAP_STRANGE_DISCOUNT = 0.942;
+const SCRAP_UNIQUE_DISCOUNT = 0.982;
 
 const warnAlert = $('<div id="listing_alert_warn" class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Beginning...</strong> Calling apis and populating information.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
 
@@ -16,17 +21,17 @@ $(async function() {
   table = $('#item_table').DataTable({
     lengthChange: false,
     pageLength: 5,
-    order: [[5, 'desc']],
+    order: [[6, 'desc']],
   });
   await refreshKeyProfiles();
   displayProfitables();
 });
 
 async function manualSetKeyVal() {
-  var val = $("#key_val").val();
-  $('#currency_prices').empty();
-  $('#currency_prices').append($("<div>Keys: "+val+" Metal</div>"));
-  key_value_in_metal = val;
+  key_value_in_metal_scrap = parseFloat($("#key_val").val());
+  key_value_in_metal_scrap_upper = key_value_in_metal_scrap + 0.66;
+  $('#currency_used_price').empty();
+  $('#currency_used_price').append($(`<div>Used Key Price: ${key_value_in_metal_scrap}/${key_value_in_metal_scrap_upper} metal</div>`));
 }
 
 async function refreshKeyProfiles() {
@@ -45,8 +50,18 @@ async function displayCurrencies() {
   });
   const token = token_result.data;
 
+  const result_bptf = await axios({
+    url: "/get_bptf_currency",
+    method: 'GET',
+  });
+
+  const key_vals_bptf = result_bptf.data["response"]["currencies"]["keys"]["price"];
+  key_value_in_metal_bptf = key_vals_bptf["value"];
+  key_value_in_metal_bptf_upper = key_vals_bptf["value_high"];
+  $('#currency_prices').append($(`<div>Backpack.tf Keys: ${key_value_in_metal_bptf}/${key_value_in_metal_bptf_upper} ${key_vals_bptf["currency"]}</div>`));
+
   const result = await axios({
-    url: "/get_currency",
+    url: "/get_ptf_currency",
     method: 'GET',
     params: {
       token: token,
@@ -55,8 +70,14 @@ async function displayCurrencies() {
   const key_vals = result.data;
   const key_price_buy = (key_vals["buyHalfScrap"] / 18).toFixed(2);
   const key_price_sell = (key_vals["sellHalfScrap"] / 18).toFixed(2);
-  $('#currency_prices').append($(`<div>Keys: ${key_price_buy}/${key_price_sell} metal</div>`));
-  key_value_in_metal = key_price_buy;
+  key_value_in_metal_prices = key_price_buy;
+  key_value_in_metal_prices_upper = key_price_sell;
+  $('#currency_prices').append($(`<div>Prices.tf Keys: ${key_value_in_metal_prices}/${key_value_in_metal_prices_upper} metal</div>`));
+
+  // Calculated from prices.tf input at first (can be set manually later)
+  key_value_in_metal_scrap = parseFloat(key_price_buy);
+  key_value_in_metal_scrap_upper = key_value_in_metal_scrap + 0.66;
+  $('#currency_used_price').append($(`<div>Used Key Price: ${key_value_in_metal_scrap}/${key_value_in_metal_scrap_upper} metal</div>`));
 }
 
 async function displayProfiles() {
@@ -97,11 +118,11 @@ function buildProfileDiv(row_parent, id, user) {
 
   const tf2_inventory = user["inventory"][440];
   var name_div = $(`<div><a href="${"https://backpack.tf/profiles/"+id}" target="_blank">${user["name"]}</a></div>`);
-  var value_div = $(`<div> Total value: ${tf2_inventory["value"].toFixed(2)}</div>`);
+  var value_div = $(`<div> Total value: ${roundToNearestScrap(tf2_inventory["value"])}</div>`);
   var keys_div = $('<div> Keys: '+tf2_inventory["keys"].toFixed(2)+"</div>");
-  var metal_div = $('<div> Metal: '+tf2_inventory["metal"].toFixed(2)+"</div>");
-  var item_val_metal = tf2_inventory["value"] - tf2_inventory["keys"]*key_value_in_metal - tf2_inventory["metal"];
-  var item_value_div = $('<div> Items value: '+item_val_metal.toFixed(2)+"</div>");
+  var metal_div = $('<div> Metal: '+roundToNearestScrap(tf2_inventory["metal"])+"</div>");
+  var item_val_metal = tf2_inventory["value"] - tf2_inventory["keys"]*key_value_in_metal_bptf - tf2_inventory["metal"];
+  var item_value_div = $('<div> Items value: '+roundToNearestScrap(item_val_metal)+"</div>");
   var slots = $('<div> Slots: '+tf2_inventory["slots"]["used"]+"/"+tf2_inventory["slots"]["total"]+"</div>");
 
   col1.append(image);
@@ -182,12 +203,21 @@ async function displayProfitables() {
       if(barterPrice["keys"] || barterPrice["metal"])
         price = 0;
       if(barterPrice["keys"])
-        price += barterPrice["keys"] * key_value_in_metal;
+        price += barterPrice["keys"] * key_value_in_metal_prices;
       if(barterPrice["metal"])
         price += barterPrice["metal"]
       
       if(price) {
-        const scraptf_price = info.bp_price * 0.94; // This is the pricing scheme of scrap.tf
+        var scraptf_price = info.bp_price;
+        switch(info.quality_idx) {
+          case STRANGE_INDEX:
+            scraptf_price *= SCRAP_STRANGE_DISCOUNT;
+            break;
+          case UNIQUE_INDEX:
+            scraptf_price *= SCRAP_UNIQUE_DISCOUNT;
+            break;
+        }
+
         var profit_threshold = scraptf_price * 0.8; // This is the pricing scheme of scrap.tf
         var potentialProfit = profit_threshold - price;
 
@@ -198,10 +228,11 @@ async function displayProfitables() {
         table.row.add( [
           `<a href="${buildBptfLink(info)}" target="_blank">${info.quality} ${info.item} </a>`,
           sku_links.join("\n"),
-          scraptf_price.toFixed(2),
-          profit_threshold.toFixed(2),
-          price.toFixed(2),
-          potentialProfit.toFixed(2),
+          roundToNearestScrap(info.bp_price), // Backpack.tf price
+          roundToNearestScrap(scraptf_price), // Scrap.tf price
+          roundToNearestScrap(profit_threshold), // Maximum allowed
+          roundToNearestScrap(price), // Lowest listing
+          roundToNearestScrap(potentialProfit), //Potential profit
         ] ).draw( false );
       }
     }
@@ -232,7 +263,7 @@ async function parseInfo(all_items, item, index) {
     }
 
     if(item_price["currency"] == "keys")
-      price = price * key_value_in_metal;
+      price = price * key_value_in_metal_bptf;
     else if (item_price["currency"] != "metal")
       price = undefined
   }
@@ -247,6 +278,7 @@ async function parseInfo(all_items, item, index) {
   return {
     item: item,
     skus: defindices,
+    quality_idx: index,
     quality: quality, 
     bp_price: price,
   }
@@ -294,4 +326,18 @@ function buildBptfLink(info) {
 
 function delay(time) {
   return new Promise(resolve => setTimeout(resolve, time));
+}
+
+function roundToNearestScrap(ref_val) {
+  truncateDecimals = function (number, digits) {
+    var multiplier = Math.pow(10, digits),
+      adjustedNum = number * multiplier,
+      truncatedNum = Math[adjustedNum < 0 ? 'ceil' : 'floor'](adjustedNum);
+
+    return truncatedNum / multiplier;
+  };
+
+  ref_val = parseFloat(ref_val);
+  const val = Math.round(ref_val * 9) / 9;
+  return truncateDecimals(val, 2);
 }

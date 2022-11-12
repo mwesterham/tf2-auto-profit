@@ -79,7 +79,7 @@ app.get('/get_price_token', async function (req, res) {
       res.send("An error occured getting auth token from prices tf.");
    }
 })
-app.get('/get_currency', async function (req, res) {
+app.get('/get_ptf_currency', async function (req, res) {
    const auth_token = req.query.token;
 
    try {
@@ -97,6 +97,22 @@ app.get('/get_currency', async function (req, res) {
    catch(error) {
       logger.debug(error);
       res.send("An error occured getting key price from prices tf.");
+   }
+})
+app.get('/get_bptf_currency', async function (req, res) {
+   try {
+      const result = await axios({
+         url: backpackURLs["base"] + backpackURLs["operations"]["get_currency"],
+         method: 'GET',
+         params: {
+            key: process.env.BPTF_API_KEY,
+         }
+      });
+      res.send(result.data);
+   }
+   catch(error) {
+      logger.debug(error);
+      res.send("An error occured.");
    }
 })
 app.get('/get_ptf_prices', async function (req, res) {
