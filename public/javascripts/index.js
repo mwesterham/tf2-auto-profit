@@ -9,8 +9,15 @@ const STRANGE_INDEX = 11;
 const UNIQUE_INDEX = 6;
 const GENUINE_INDEX = 1;
 
-const SCRAP_STRANGE_DISCOUNT = 0.942;
-const SCRAP_UNIQUE_DISCOUNT = 0.982;
+const SCRAP_STRANGE_DISCOUNT = function(ref_val) {
+  return ref_val * 0.942;
+};
+const SCRAP_UNIQUE_DISCOUNT = function(ref_val) {
+  return ref_val * 0.982;
+};
+const SCRAP_KEY_MARKUP = function(ref_val) {
+  return ref_val / 0.981;
+};
 
 const warnAlert = $('<div id="listing_alert_warn" class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Beginning...</strong> Calling apis and populating information.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
 
@@ -28,8 +35,8 @@ $(async function() {
 });
 
 async function manualSetKeyVal() {
-  key_value_in_metal_scrap = parseFloat($("#key_val").val());
-  key_value_in_metal_scrap_upper = key_value_in_metal_scrap + 0.66;
+  key_value_in_metal_scrap = roundToNearestScrap(parseFloat($("#key_val").val()));
+  key_value_in_metal_scrap_upper = roundToNearestScrap(SCRAP_KEY_MARKUP(key_value_in_metal_scrap));
   $('#currency_used_price').empty();
   $('#currency_used_price').append($(`<div>Used Key Price: ${key_value_in_metal_scrap}/${key_value_in_metal_scrap_upper} metal</div>`));
 }
@@ -56,8 +63,8 @@ async function displayCurrencies() {
   });
 
   const key_vals_bptf = result_bptf.data["response"]["currencies"]["keys"]["price"];
-  key_value_in_metal_bptf = key_vals_bptf["value"];
-  key_value_in_metal_bptf_upper = key_vals_bptf["value_high"];
+  key_value_in_metal_bptf = roundToNearestScrap(key_vals_bptf["value"]);
+  key_value_in_metal_bptf_upper = roundToNearestScrap(key_vals_bptf["value_high"]);
   $('#currency_prices').append($(`<div>Backpack.tf Keys: ${key_value_in_metal_bptf}/${key_value_in_metal_bptf_upper} ${key_vals_bptf["currency"]}</div>`));
 
   const result = await axios({
@@ -70,13 +77,13 @@ async function displayCurrencies() {
   const key_vals = result.data;
   const key_price_buy = (key_vals["buyHalfScrap"] / 18).toFixed(2);
   const key_price_sell = (key_vals["sellHalfScrap"] / 18).toFixed(2);
-  key_value_in_metal_prices = key_price_buy;
-  key_value_in_metal_prices_upper = key_price_sell;
+  key_value_in_metal_prices = roundToNearestScrap(key_price_buy);
+  key_value_in_metal_prices_upper = roundToNearestScrap(key_price_sell);
   $('#currency_prices').append($(`<div>Prices.tf Keys: ${key_value_in_metal_prices}/${key_value_in_metal_prices_upper} metal</div>`));
 
   // Calculated from prices.tf input at first (can be set manually later)
-  key_value_in_metal_scrap = parseFloat(key_price_buy);
-  key_value_in_metal_scrap_upper = key_value_in_metal_scrap + 0.66;
+  key_value_in_metal_scrap = roundToNearestScrap(parseFloat(key_price_buy));
+  key_value_in_metal_scrap_upper = roundToNearestScrap(SCRAP_KEY_MARKUP(key_value_in_metal_scrap));
   $('#currency_used_price').append($(`<div>Used Key Price: ${key_value_in_metal_scrap}/${key_value_in_metal_scrap_upper} metal</div>`));
 }
 
@@ -211,10 +218,10 @@ async function displayProfitables() {
         var scraptf_price = info.bp_price;
         switch(info.quality_idx) {
           case STRANGE_INDEX:
-            scraptf_price *= SCRAP_STRANGE_DISCOUNT;
+            scraptf_price = SCRAP_STRANGE_DISCOUNT(scraptf_price);
             break;
           case UNIQUE_INDEX:
-            scraptf_price *= SCRAP_UNIQUE_DISCOUNT;
+            scraptf_price = SCRAP_UNIQUE_DISCOUNT(scraptf_price);
             break;
         }
 
