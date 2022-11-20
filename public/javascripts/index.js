@@ -16,7 +16,7 @@ const SCRAP_UNIQUE_DISCOUNT = function(ref_val) {
   return ref_val * 0.982;
 };
 const SCRAP_KEY_MARKUP = function(ref_val) {
-  return ref_val / 0.981;
+  return ref_val + .44;
 };
 
 const warnAlert = $('<div id="listing_alert_warn" class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Beginning...</strong> Calling apis and populating information.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
@@ -35,8 +35,10 @@ $(async function() {
 });
 
 async function manualSetKeyVal() {
-  key_value_in_metal_scrap = roundToNearestScrap(parseFloat($("#key_val").val()));
-  key_value_in_metal_scrap_upper = roundToNearestScrap(SCRAP_KEY_MARKUP(key_value_in_metal_scrap));
+  key_value_in_metal_scrap = roundToNearestScrap(parseFloat($("#key_val_min").val()));
+  key_value_in_metal_scrap_upper = $("#key_val_max").val()? 
+    roundToNearestScrap(parseFloat($("#key_val_max").val())) :
+    roundToNearestScrap(SCRAP_KEY_MARKUP(key_value_in_metal_scrap));
   $('#currency_used_price').empty();
   $('#currency_used_price').append($(`<div>Used Key Price: ${key_value_in_metal_scrap}/${key_value_in_metal_scrap_upper} metal</div>`));
 }
