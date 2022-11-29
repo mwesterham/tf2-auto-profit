@@ -178,8 +178,8 @@ app.get('/get_ignore', async function (req, res) {
 // Build server
 var httpsServer = https.createServer(credentials, app);
 var server = httpsServer.listen(3000, function () {
-   var host = server.address().address
-   var port = server.address().port
+   var host = "localhost";
+   var port = server.address().port;
    
-   logger.debug("Example app listening at http://%s:%s", host, port)
+   logger.debug("Example app listening at https://%s:%s", host, port);
 })
