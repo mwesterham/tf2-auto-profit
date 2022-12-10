@@ -40,9 +40,9 @@ $(async function() {
     pageLength: 5,
     order: [[6, 'desc']],
   });
+  populateScrapPricings();
   await refreshKeyProfiles();
   displayProfitables();
-  populateScrapPricings();
 });
 
 async function manualSetKeyVal() {
@@ -271,11 +271,11 @@ async function displayProfitables() {
         table.row.add( [
           `<a href="${buildBptfLink(info)}" target="_blank">${info.quality} ${info.item} </a>`,
           sku_links.join("\n"),
-          roundToNearestScrap(info.bp_price), // Backpack.tf price
-          roundToNearestScrap(scraptf_price), // Scrap.tf price
-          roundToNearestScrap(profit_threshold), // Maximum allowed
-          roundToNearestScrap(price), // Lowest listing
-          roundToNearestScrap(potentialProfit), //Potential profit
+          `${roundToNearestScrap(info.bp_price)} ${toKeyMetalDenomination(info.bp_price)}`, // Backpack.tf price
+          `${roundToNearestScrap(scraptf_price)} ${toKeyMetalDenomination(scraptf_price)}`, // Scrap.tf price
+          `${roundToNearestScrap(profit_threshold)} ${toKeyMetalDenomination(profit_threshold)}`, // Maximum allowed
+          `${roundToNearestScrap(price)} ${toKeyMetalDenomination(price)}`, // Lowest listing
+          `${roundToNearestScrap(potentialProfit)} ${toKeyMetalDenomination(potentialProfit)}`, //Potential profit
         ] ).draw( false );
       }
     }
@@ -383,4 +383,13 @@ function roundToNearestScrap(ref_val) {
   ref_val = parseFloat(ref_val);
   const val = Math.round(ref_val * 9) / 9;
   return truncateDecimals(val, 2);
+}
+
+function toKeyMetalDenomination(ref_val) {
+  const keys = Math.floor(ref_val/key_value_in_metal_scrap);
+  const remainder_metal = roundToNearestScrap(ref_val % key_value_in_metal_scrap);
+  var val_str = "";
+  if(keys != 0)
+    val_str += `(${keys} Keys + ${remainder_metal} refined)`;
+  return val_str;
 }

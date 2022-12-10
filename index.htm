@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="stylesheets/index.css" type="text/css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css" type="text/css">
     
+    <script type="text/javascript" async="" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
     <script src="jquery/jquery.js"></script>
     <script src="axios/axios.js"></script>
     <script src="js/bootstrap.min.js"></script>
@@ -33,47 +34,59 @@
           </div>
         </div>
         <div class="row formatted-row">
-          <div class="col-auto">
+          <div class="col-2">
             <span class="input-group-text">Unique Discount</span>
           </div>
-          <div class="col-auto">
+          <div class="col-2">
             <input type="number" placeholder="Please Enter Value..." class="form-control" id="scrap_unique_discount">
           </div>
-          <div class="col-auto">
+          <div class="col-2">
             <button class="btn btn-primary" onclick="setUniqueDiscount()">Set Value</button>
           </div>
+          <div class="col-auto">
+            <span class="input-group-text">\[Unique \ Discount = \frac{scrap.tf \ price}{backpack.tf \ price}\]</span>
+          </div>
         </div>
         <div class="row formatted-row">
-          <div class="col-auto">
+          <div class="col-2">
             <span class="input-group-text">Unique Buy Ratio</span>
           </div>
-          <div class="col-auto">
+          <div class="col-2">
             <input type="number" placeholder="Please Enter Value..." class="form-control" id="scrap_unique_buy_ratio">
           </div>
-          <div class="col-auto">
+          <div class="col-2">
             <button class="btn btn-primary" onclick="setUniqueBuyRatio()">Set Value</button>
           </div>
+          <div class="col-auto">
+            <span class="input-group-text">\[Unique \ Buy \ Ratio = \frac{scrap.tf \ buying \ price}{scrap.tf \ selling \ price}\]</span>
+          </div>
         </div>
         <div class="row formatted-row">
-          <div class="col-auto">
+          <div class="col-2">
             <span class="input-group-text">Strange Discount</span>
           </div>
-          <div class="col-auto">
+          <div class="col-2">
             <input type="number" placeholder="Please Enter Value..." class="form-control" id="scrap_strange_discount">
           </div>
-          <div class="col-auto">
+          <div class="col-2">
             <button class="btn btn-primary" onclick="setStrangeDiscount()">Set Value</button>
+          </div>
+          <div class="col-auto">
+            <span class="input-group-text">\[Strange \ Discount = \frac{scrap.tf \ price}{backpack.tf \ price}\]</span>
           </div>
         </div>
         <div class="row formatted-row">
-          <div class="col-auto">
+          <div class="col-2">
             <span class="input-group-text">Strange Buy Ratio</span>
           </div>
-          <div class="col-auto">
+          <div class="col-2">
             <input type="number" placeholder="Please Enter Value..." class="form-control" id="scrap_strange_buy_ratio">
           </div>
-          <div class="col-auto">
+          <div class="col-2">
             <button class="btn btn-primary" onclick="setStrangeBuyRatio()">Set Value</button>
+          </div>
+          <div class="col-auto">
+            <span class="input-group-text">\[Strange \ Buy \ Ratio = \frac{scrap.tf \ buying \ price}{scrap.tf \ selling \ price}\]</span>
           </div>
         </div>
         <div class="row formatted-row">
