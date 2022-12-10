@@ -13,19 +13,19 @@ const STRANGE_INDEX = 11;
 const UNIQUE_INDEX = 6;
 const GENUINE_INDEX = 1;
 
-const SCRAP_STRANGE_DISCOUNT = function(ref_val) {
+const SCRAP_STRANGE_DISCOUNT = function (ref_val) {
   return ref_val * scrap_strange_discount;
 };
-const SCRAP_STRANGE_BUY_RATIO = function(ref_val) {
+const SCRAP_STRANGE_BUY_RATIO = function (ref_val) {
   return ref_val * scrap_strange_buy_ratio;
 };
-const SCRAP_UNIQUE_DISCOUNT = function(ref_val) {
+const SCRAP_UNIQUE_DISCOUNT = function (ref_val) {
   return ref_val * scrap_unique_discount;
 };
-const SCRAP_UNIQUE_BUY_RATIO = function(ref_val) {
+const SCRAP_UNIQUE_BUY_RATIO = function (ref_val) {
   return ref_val * scrap_unique_buy_ratio;
 };
-const SCRAP_KEY_MARKUP = function(ref_val) {
+const SCRAP_KEY_MARKUP = function (ref_val) {
   return ref_val + .44;
 };
 
@@ -34,12 +34,43 @@ const warnAlert = $('<div id="listing_alert_warn" class="alert alert-warning ale
 const successAlert = $('<div id="listing_alert_finish" class="alert alert-success alert-dismissible fade show" role="alert"><strong>Finished!</strong> All found listings have been loaded.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
 
 // On document ready
-$(async function() {
+$(async function () {
   table = $('#item_table').DataTable({
     lengthChange: false,
     pageLength: 5,
-    order: [[6, 'desc']],
+    columns: [
+      {
+        className: 'dt-control',
+        orderable: false,
+        data: null,
+        defaultContent: '',
+      },
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+    ],
+    order: [[7, 'desc']],
   });
+  // Add event listener for opening and closing details
+  $('#item_table tbody').on('click', 'td.dt-control', function () {
+    var tr = $(this).closest('tr');
+    var row = table.row(tr);
+
+    if (row.child.isShown()) {
+      // This row is already open - close it
+      row.child.hide();
+      tr.removeClass('shown');
+    } else {
+      // Open this row
+      row.child(formatDT(row.data())).show();
+      tr.addClass('shown');
+    }
+  });
+
   populateScrapPricings();
   await refreshKeyProfiles();
   displayProfitables();
@@ -47,7 +78,7 @@ $(async function() {
 
 async function manualSetKeyVal() {
   key_value_in_metal_scrap = roundToNearestScrap(parseFloat($("#key_val_min").val()));
-  key_value_in_metal_scrap_upper = $("#key_val_max").val()? 
+  key_value_in_metal_scrap_upper = $("#key_val_max").val() ?
     roundToNearestScrap(parseFloat($("#key_val_max").val())) :
     roundToNearestScrap(SCRAP_KEY_MARKUP(key_value_in_metal_scrap));
   $('#currency_used_price').empty();
@@ -135,7 +166,7 @@ async function displayProfiles() {
   var row_parent = $("<div>", {
     class: "row formatted-row",
   });
-  for(let id in json_result["users"]) {
+  for (let id in json_result["users"]) {
     var user = json_result["users"][id];
     var profile_div = buildProfileDiv(row_parent, id, user);
   }
@@ -143,7 +174,7 @@ async function displayProfiles() {
 }
 
 function buildProfileDiv(row_parent, id, user) {
-  
+
   var col1 = $("<div>", {
     class: "col-auto",
   });
@@ -159,13 +190,13 @@ function buildProfileDiv(row_parent, id, user) {
   });
 
   const tf2_inventory = user["inventory"][440];
-  var name_div = $(`<div><a href="${"https://backpack.tf/profiles/"+id}" target="_blank">${user["name"]}</a></div>`);
+  var name_div = $(`<div><a href="${"https://backpack.tf/profiles/" + id}" target="_blank">${user["name"]}</a></div>`);
   var value_div = $(`<div> Total value: ${roundToNearestScrap(tf2_inventory["value"])}</div>`);
-  var keys_div = $('<div> Keys: '+tf2_inventory["keys"].toFixed(2)+"</div>");
-  var metal_div = $('<div> Metal: '+roundToNearestScrap(tf2_inventory["metal"])+"</div>");
-  var item_val_metal = tf2_inventory["value"] - tf2_inventory["keys"]*key_value_in_metal_bptf - tf2_inventory["metal"];
-  var item_value_div = $('<div> Items value: '+roundToNearestScrap(item_val_metal)+"</div>");
-  var slots = $('<div> Slots: '+tf2_inventory["slots"]["used"]+"/"+tf2_inventory["slots"]["total"]+"</div>");
+  var keys_div = $('<div> Keys: ' + tf2_inventory["keys"].toFixed(2) + "</div>");
+  var metal_div = $('<div> Metal: ' + roundToNearestScrap(tf2_inventory["metal"]) + "</div>");
+  var item_val_metal = tf2_inventory["value"] - tf2_inventory["keys"] * key_value_in_metal_bptf - tf2_inventory["metal"];
+  var item_value_div = $('<div> Items value: ' + roundToNearestScrap(item_val_metal) + "</div>");
+  var slots = $('<div> Slots: ' + tf2_inventory["slots"]["used"] + "/" + tf2_inventory["slots"]["total"] + "</div>");
 
   col1.append(image);
   col2.append(name_div, value_div, item_value_div, keys_div, metal_div, slots);
@@ -179,7 +210,7 @@ async function displayProfitables() {
   running_index = running_index + 1;
   const this_index = running_index;
 
-  $("#alerts").append(warnAlert.clone().delay(10000).slideUp(2000, function() {
+  $("#alerts").append(warnAlert.clone().delay(10000).slideUp(2000, function () {
     $(this).alert('close');
   }));
   table.clear();
@@ -202,10 +233,10 @@ async function displayProfitables() {
 
   // Construct the item objects
   var all_item_infos = [];
-  for(var item in all_items) {
+  for (var item in all_items) {
     const prices = all_items[item]["prices"];
 
-    for(var index in prices) {
+    for (var index in prices) {
       var info = await parseInfo(all_items, item, index);
       all_item_infos.push(info);
     }
@@ -213,15 +244,15 @@ async function displayProfitables() {
 
   // Query the listings of each object
   function* listingsGenerator(all_item_infos, min, max) {
-    for(let i in all_item_infos) {
+    for (let i in all_item_infos) {
       const info = all_item_infos[i];
 
       // check if the the item has some of the ignored terms
       const isIgnored = ignored.some(term => info.item.includes(term))
 
-      if(!isIgnored && info.quality && info.bp_price && min <= info.bp_price && info.bp_price <= max) {
+      if (!isIgnored && info.quality && info.bp_price && min <= info.bp_price && info.bp_price <= max) {
         var query_name = info.item;
-        if(info.quality != "Unique")
+        if (info.quality != "Unique")
           query_name = info.quality + " " + query_name;
         yield getListings(info, query_name);
       }
@@ -235,24 +266,24 @@ async function displayProfitables() {
     await delay(1100);
 
     // kill if this process is not the running index
-    if(this_index != running_index)
+    if (this_index != running_index)
       return;
 
-    if(listings["listings"] && listings["listings"][0]["intent"] == "sell") {
+    if (listings["listings"] && listings["listings"][0]["intent"] == "sell") {
       // Calculate price manually since bptf prices for keys are not always up to snuff
       var barterPrice = listings["listings"][0]["currencies"];
       var price = undefined;
-      if(barterPrice["keys"] || barterPrice["metal"])
+      if (barterPrice["keys"] || barterPrice["metal"])
         price = 0;
-      if(barterPrice["keys"])
+      if (barterPrice["keys"])
         price += barterPrice["keys"] * key_value_in_metal_scrap_upper; // use the upper scrap metal because this is how much it costs me
-      if(barterPrice["metal"])
+      if (barterPrice["metal"])
         price += barterPrice["metal"]
-      
+
       var profit_threshold = 0; // This is the pricing scheme of scrap.tf
-      if(price) {
+      if (price) {
         var scraptf_price = info.bp_price;
-        switch(info.quality_idx) {
+        switch (info.quality_idx) {
           case STRANGE_INDEX:
             scraptf_price = SCRAP_STRANGE_DISCOUNT(scraptf_price);
             profit_threshold = SCRAP_STRANGE_BUY_RATIO(scraptf_price);
@@ -265,22 +296,43 @@ async function displayProfitables() {
         var potentialProfit = profit_threshold - price;
 
         var sku_links = [];
-        for(let i = 0; i < info.skus.length; i++) {
+        for (let i = 0; i < info.skus.length; i++) {
           sku_links.push(`<div><a href="${"https://prices.tf/items/" + info.skus[i]}" target="_blank">${info.skus[i]} </a></div>`);
         }
-        table.row.add( [
+        table.row.add([
+          null,
           `<a href="${buildBptfLink(info)}" target="_blank">${info.quality} ${info.item} </a>`,
           sku_links.join("\n"),
-          `${roundToNearestScrap(info.bp_price)} ${toKeyMetalDenomination(info.bp_price)}`, // Backpack.tf price
-          `${roundToNearestScrap(scraptf_price)} ${toKeyMetalDenomination(scraptf_price)}`, // Scrap.tf price
-          `${roundToNearestScrap(profit_threshold)} ${toKeyMetalDenomination(profit_threshold)}`, // Maximum allowed
-          `${roundToNearestScrap(price)} ${toKeyMetalDenomination(price)}`, // Lowest listing
-          `${roundToNearestScrap(potentialProfit)} ${toKeyMetalDenomination(potentialProfit)}`, //Potential profit
-        ] ).draw( false );
+          roundToNearestScrap(info.bp_price), // Backpack.tf price
+          roundToNearestScrap(scraptf_price), // Scrap.tf price
+          roundToNearestScrap(profit_threshold), // Maximum allowed
+          roundToNearestScrap(price), // Lowest listing
+          roundToNearestScrap(potentialProfit), //Potential profit
+        ]).draw(false);
       }
     }
   }
   $("#alerts").append(successAlert.clone());
+}
+
+/* Formatting function for row details - modify as you need */
+function formatDT(d) {
+  // `d` is the original data object for the row
+  console.log(d)
+  var table = $('<table>').addClass('table');
+  var body = $('<tbody>');
+  table.append(body);
+
+  const rowNames = ['null', 'Item Name', 'Item SKU', 'Backpack.tf Price', 'Scrap.tf Price', 'Profit Threshold', 'Lowest Listing', 'Potential Profit'];
+  for (i = 3; i < 8; i++) {
+    var row = $('<tr>');
+    row.append($('<td>').text(rowNames[i]));
+    row.append($('<td>').text(d[i]));
+    row.append($('<td>').text(toKeyMetalDenomination(d[i])));
+    body.append(row);
+  }
+
+  return table;
 }
 
 async function parseInfo(all_items, item, index) {
@@ -292,8 +344,8 @@ async function parseInfo(all_items, item, index) {
     let item_price = prices[index]["Tradable"]["Craftable"][0]
     price = parseFloat(item_price["value"]);
 
-  
-    switch(index) {
+
+    switch (index) {
       case STRANGE_INDEX:
         quality = "Strange";
         break;
@@ -305,24 +357,24 @@ async function parseInfo(all_items, item, index) {
       //   break;
     }
 
-    if(item_price["currency"] == "keys")
+    if (item_price["currency"] == "keys")
       price = price * key_value_in_metal_bptf;
     else if (item_price["currency"] != "metal")
       price = undefined
   }
-  catch(e) {
+  catch (e) {
     console.log("[Error for " + item + " with quality " + quality + "] " + e)
   }
-  
+
   const defindices = [];
-  for(let i = 0; i < all_items[item]["defindex"].length; i++) {
+  for (let i = 0; i < all_items[item]["defindex"].length; i++) {
     defindices.push(`${all_items[item]["defindex"][i]};${index}`);
   }
   return {
     item: item,
     skus: defindices,
     quality_idx: index,
-    quality: quality, 
+    quality: quality,
     bp_price: price,
   }
 }
@@ -386,10 +438,16 @@ function roundToNearestScrap(ref_val) {
 }
 
 function toKeyMetalDenomination(ref_val) {
-  const keys = Math.floor(ref_val/key_value_in_metal_scrap);
+  var negMult = 1;
+  if (ref_val < 0)
+    negMult = -1;
+
+  ref_val *= negMult;
+
+  const keys = Math.floor(ref_val / key_value_in_metal_scrap);
   const remainder_metal = roundToNearestScrap(ref_val % key_value_in_metal_scrap);
   var val_str = "";
-  if(keys != 0)
-    val_str += `(${keys} Keys + ${remainder_metal} refined)`;
+  if (keys != 0)
+    val_str += `${keys * negMult} Keys + ${remainder_metal * negMult} refined`;
   return val_str;
 }
