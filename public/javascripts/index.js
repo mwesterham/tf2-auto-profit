@@ -1,6 +1,10 @@
 var key_value_in_metal_prices, key_value_in_metal_prices_upper;
 var key_value_in_metal_bptf, key_value_in_metal_bptf_upper;
 var key_value_in_metal_scrap, key_value_in_metal_scrap_upper;
+
+var scrap_unique_discount = 0.982, scrap_unique_buy_ratio = 0.8;
+var scrap_strange_discount = 0.942, scrap_strange_buy_ratio = 0.89;
+
 var table;
 var running_index = 0;
 
@@ -10,10 +14,16 @@ const UNIQUE_INDEX = 6;
 const GENUINE_INDEX = 1;
 
 const SCRAP_STRANGE_DISCOUNT = function(ref_val) {
-  return ref_val * 0.942;
+  return ref_val * scrap_strange_discount;
+};
+const SCRAP_STRANGE_BUY_RATIO = function(ref_val) {
+  return ref_val * scrap_strange_buy_ratio;
 };
 const SCRAP_UNIQUE_DISCOUNT = function(ref_val) {
-  return ref_val * 0.982;
+  return ref_val * scrap_unique_discount;
+};
+const SCRAP_UNIQUE_BUY_RATIO = function(ref_val) {
+  return ref_val * scrap_unique_buy_ratio;
 };
 const SCRAP_KEY_MARKUP = function(ref_val) {
   return ref_val + .44;
@@ -32,6 +42,7 @@ $(async function() {
   });
   await refreshKeyProfiles();
   displayProfitables();
+  populateScrapPricings();
 });
 
 async function manualSetKeyVal() {
@@ -49,6 +60,26 @@ async function refreshKeyProfiles() {
   await delay(500); // Helps visually show the refresh
   await displayCurrencies();
   await displayProfiles();
+}
+
+function populateScrapPricings() {
+  $('#scrap_unique_discount').val(scrap_unique_discount);
+  $('#scrap_unique_buy_ratio').val(scrap_unique_buy_ratio);
+  $('#scrap_strange_discount').val(scrap_strange_discount);
+  $('#scrap_strange_buy_ratio').val(scrap_strange_buy_ratio);
+}
+
+function setUniqueDiscount() {
+  scrap_unique_discount = $('#scrap_unique_discount').val();
+}
+function setUniqueBuyRatio() {
+  scrap_unique_buy_ratio = $('#scrap_unique_buy_ratio').val();
+}
+function setStrangeDiscount() {
+  scrap_strange_discount = $('#scrap_strange_discount').val();
+}
+function setStrangeBuyRatio() {
+  scrap_strange_buy_ratio = $('#scrap_strange_buy_ratio').val();
 }
 
 async function displayCurrencies() {
@@ -87,6 +118,8 @@ async function displayCurrencies() {
   key_value_in_metal_scrap = roundToNearestScrap(parseFloat(key_price_buy));
   key_value_in_metal_scrap_upper = roundToNearestScrap(SCRAP_KEY_MARKUP(key_value_in_metal_scrap));
   $('#currency_used_price').append($(`<div>Used Key Price: ${key_value_in_metal_scrap}/${key_value_in_metal_scrap_upper} metal</div>`));
+  $('#key_val_min').val(key_value_in_metal_scrap);
+  $('#key_val_max').val(key_value_in_metal_scrap_upper);
 }
 
 async function displayProfiles() {
@@ -216,18 +249,19 @@ async function displayProfitables() {
       if(barterPrice["metal"])
         price += barterPrice["metal"]
       
+      var profit_threshold = 0; // This is the pricing scheme of scrap.tf
       if(price) {
         var scraptf_price = info.bp_price;
         switch(info.quality_idx) {
           case STRANGE_INDEX:
             scraptf_price = SCRAP_STRANGE_DISCOUNT(scraptf_price);
+            profit_threshold = SCRAP_STRANGE_BUY_RATIO(scraptf_price);
             break;
           case UNIQUE_INDEX:
             scraptf_price = SCRAP_UNIQUE_DISCOUNT(scraptf_price);
+            profit_threshold = SCRAP_UNIQUE_BUY_RATIO(scraptf_price);
             break;
         }
-
-        var profit_threshold = scraptf_price * 0.8; // This is the pricing scheme of scrap.tf
         var potentialProfit = profit_threshold - price;
 
         var sku_links = [];
