@@ -1,9 +1,4 @@
 class ServerAPI {
-  constructor(name, year) {
-    this.name = name;
-    this.year = year;
-  }
-
   static async getIgnoredItems() {
     const ignored_response = await axios({
       url: '/get_ignore',

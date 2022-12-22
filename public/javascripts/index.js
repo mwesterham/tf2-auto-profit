@@ -6,7 +6,7 @@ var scrap_unique_discount = 0.982, scrap_unique_buy_ratio = 0.8;
 var scrap_strange_discount = 0.942, scrap_strange_buy_ratio = 0.89;
 
 var table;
-var running_index = 0;
+var runningTradesJob = null;
 
 const COLLECTORS_INDEX = 5;
 const STRANGE_INDEX = 11;
@@ -181,14 +181,11 @@ function buildProfileDiv(row_parent, id, user) {
 }
 
 async function displayProfitables() {
-  // mechanism to kill any process that is already running
-  running_index = running_index + 1;
-  const this_index = running_index;
-
   $("#alerts").append(warnAlert.clone().delay(10000).slideUp(2000, function () {
     $(this).alert('close');
   }));
-  table.clear();
+  if(runningTradesJob)
+    runningTradesJob.cancelJob();
 
   // Price definitions and min and max
   var min = $("#min_metal").val();
@@ -198,87 +195,16 @@ async function displayProfitables() {
   // Get all ignored items from the Server API
   const ignored = await ServerAPI.getIgnoredItems();
 
-  // Construct the item objects
-  var all_item_infos = [];
-  for (var item in all_items) {
-    const prices = all_items[item]["prices"];
-
-    for (var index in prices) {
-      var info = await parseInfo(all_items, item, index);
-      all_item_infos.push(info);
-    }
-  }
-
-  // Query the listings of each object
-  function* listingsGenerator(all_item_infos, min, max) {
-    for (let i in all_item_infos) {
-      const info = all_item_infos[i];
-
-      // check if the the item has some of the ignored terms
-      const isIgnored = ignored.some(term => info.item.includes(term))
-
-      if (!isIgnored && info.quality && info.bp_price && min <= info.bp_price && info.bp_price <= max) {
-        var query_name = info.item;
-        if (info.quality != "Unique")
-          query_name = info.quality + " " + query_name;
-        yield getListings(info, query_name);
-      }
-    }
-  }
-
-  for (const listing_promise of listingsGenerator(all_item_infos, min, max)) {
-    const listings = await listing_promise;
-    const info = listings.metainfo;
-
-    await delay(1100);
-
-    // kill if this process is not the running index
-    if (this_index != running_index)
-      return;
-
-    if (listings["listings"] && listings["listings"][0]["intent"] == "sell") {
-      // Calculate price manually since bptf prices for keys are not always up to snuff
-      var barterPrice = listings["listings"][0]["currencies"];
-      var price = undefined;
-      if (barterPrice["keys"] || barterPrice["metal"])
-        price = 0;
-      if (barterPrice["keys"])
-        price += barterPrice["keys"] * key_value_in_metal_scrap_upper; // use the upper scrap metal because this is how much it costs me
-      if (barterPrice["metal"])
-        price += barterPrice["metal"]
-
-      var profit_threshold = 0; // This is the pricing scheme of scrap.tf
-      if (price) {
-        var scraptf_price = info.bp_price;
-        switch (info.quality_idx) {
-          case STRANGE_INDEX:
-            scraptf_price = SCRAP_STRANGE_DISCOUNT(scraptf_price);
-            profit_threshold = SCRAP_STRANGE_BUY_RATIO(scraptf_price);
-            break;
-          case UNIQUE_INDEX:
-            scraptf_price = SCRAP_UNIQUE_DISCOUNT(scraptf_price);
-            profit_threshold = SCRAP_UNIQUE_BUY_RATIO(scraptf_price);
-            break;
-        }
-        var potentialProfit = profit_threshold - price;
-
-        var sku_links = [];
-        for (let i = 0; i < info.skus.length; i++) {
-          sku_links.push(`<div><a href="${"https://prices.tf/items/" + info.skus[i]}" target="_blank">${info.skus[i]} </a></div>`);
-        }
-        table.row.add([
-          null,
-          `<a href="${buildBptfLink(info)}" target="_blank">${info.quality} ${info.item} </a>`,
-          sku_links.join("\n"),
-          roundToNearestScrap(info.bp_price), // Backpack.tf price
-          roundToNearestScrap(scraptf_price), // Scrap.tf price
-          roundToNearestScrap(profit_threshold), // Maximum allowed
-          roundToNearestScrap(price), // Lowest listing
-          roundToNearestScrap(potentialProfit), //Potential profit
-        ]).draw(false);
-      }
-    }
-  }
+  runningTradesJob = new PopulateTradesJob(table, all_items, {
+    min_metal: min,
+    max_metal: max,
+    ignored: ignored,
+    SCRAP_UNIQUE_DISCOUNT: SCRAP_UNIQUE_DISCOUNT,
+    SCRAP_UNIQUE_BUY_RATIO: SCRAP_UNIQUE_BUY_RATIO,
+    SCRAP_STRANGE_DISCOUNT: SCRAP_STRANGE_DISCOUNT,
+    SCRAP_STRANGE_BUY_RATIO: SCRAP_STRANGE_BUY_RATIO
+  })
+  await runningTradesJob.run();
   $("#alerts").append(successAlert.clone());
 }
 
@@ -300,60 +226,6 @@ function formatDT(d) {
   }
 
   return table;
-}
-
-async function parseInfo(all_items, item, index) {
-  try {
-    const prices = all_items[item]["prices"];
-    var quality, price;
-
-    index = parseInt(index);
-    let item_price = prices[index]["Tradable"]["Craftable"][0]
-    price = parseFloat(item_price["value"]);
-
-
-    switch (index) {
-      case STRANGE_INDEX:
-        quality = "Strange";
-        break;
-      case UNIQUE_INDEX:
-        quality = "Unique";
-        break;
-      // case GENUINE_INDEX:
-      //   quality = "Genuine";
-      //   break;
-    }
-
-    if (item_price["currency"] == "keys")
-      price = price * key_value_in_metal_bptf;
-    else if (item_price["currency"] != "metal")
-      price = undefined
-  }
-  catch (e) {
-    console.log("[Error for " + item + " with quality " + quality + "] " + e)
-  }
-
-  const defindices = [];
-  for (let i = 0; i < all_items[item]["defindex"].length; i++) {
-    defindices.push(`${all_items[item]["defindex"][i]};${index}`);
-  }
-  return {
-    item: item,
-    skus: defindices,
-    quality_idx: index,
-    quality: quality,
-    bp_price: price,
-  }
-}
-
-async function getListings(info, item) {
-  const json_result = await ServerAPI.getBptfListings(item);;
-  json_result.metainfo = info;
-  return json_result;
-}
-
-function buildBptfLink(info) {
-  return `https://backpack.tf/stats/${info.quality}/${info.item}/Tradable/Craftable`;
 }
 
 function delay(time) {
