@@ -114,31 +114,13 @@ function setStrangeBuyRatio() {
 }
 
 async function displayCurrencies() {
-  // Get prices tf token
-  const token_result = await axios({
-    url: '/get_price_token',
-    method: 'GET',
-  });
-  const token = token_result.data;
-
-  const result_bptf = await axios({
-    url: "/get_bptf_currency",
-    method: 'GET',
-  });
-
+  const result_bptf = await ServerAPI.getBptfKeyPrices();
   const key_vals_bptf = result_bptf.data["response"]["currencies"]["keys"]["price"];
   key_value_in_metal_bptf = roundToNearestScrap(key_vals_bptf["value"]);
   key_value_in_metal_bptf_upper = roundToNearestScrap(key_vals_bptf["value_high"]);
   $('#currency_prices').append($(`<div>Backpack.tf Keys: ${key_value_in_metal_bptf}/${key_value_in_metal_bptf_upper} ${key_vals_bptf["currency"]}</div>`));
 
-  const result = await axios({
-    url: "/get_ptf_currency",
-    method: 'GET',
-    params: {
-      token: token,
-    }
-  });
-  const key_vals = result.data;
+  const key_vals = await ServerAPI.getPtfKeyPrices();
   const key_price_buy = (key_vals["buyHalfScrap"] / 18).toFixed(2);
   const key_price_sell = (key_vals["sellHalfScrap"] / 18).toFixed(2);
   key_value_in_metal_prices = roundToNearestScrap(key_price_buy);
@@ -154,14 +136,7 @@ async function displayCurrencies() {
 }
 
 async function displayProfiles() {
-  const result = await axios({
-    url: '/get_profile',
-    method: 'GET',
-    params: {
-      steamids: "76561198080592800,76561199092421012",
-    }
-  });
-  const json_result = result.data;
+  const json_result = await ServerAPI.getBptfProfileInfo("76561198080592800,76561199092421012");
 
   var row_parent = $("<div>", {
     class: "row formatted-row",
@@ -218,18 +193,10 @@ async function displayProfitables() {
   // Price definitions and min and max
   var min = $("#min_metal").val();
   var max = $("#max_metal").val();
-  const result = await axios({
-    url: '/get_bptf_prices',
-    method: 'GET',
-  });
-  const json_result = result.data;
-  const all_items = json_result["response"]["items"];
+  const all_items = await ServerAPI.getBptfItems();
 
-  const ignored_response = await axios({
-    url: '/get_ignore',
-    method: 'GET',
-  });
-  const ignored = ignored_response.data;
+  // Get all ignored items from the Server API
+  const ignored = await ServerAPI.getIgnoredItems();
 
   // Construct the item objects
   var all_item_infos = [];
@@ -380,39 +347,9 @@ async function parseInfo(all_items, item, index) {
 }
 
 async function getListings(info, item) {
-  const result = await axios({
-    url: '/get_listing',
-    method: 'GET',
-    params: {
-      sku: item,
-    }
-  });
-  const json_result = result.data;
+  const json_result = await ServerAPI.getBptfListings(item);;
   json_result.metainfo = info;
   return json_result;
-}
-
-async function getPtfPrice(sku) {
-  // Get prices tf token
-  const token_result = await axios({
-    url: '/get_price_token',
-    method: 'GET',
-  });
-  const token = token_result.data;
-
-  // Call once to get the max num of items
-  const result = await axios({
-    url: '/get_ptf_prices',
-    method: 'GET',
-    params: {
-      token: token,
-      sku: sku,
-    }
-  });
-  const response = result.data;
-  const price_half_scrap = response["buyHalfScrap"] + response["buyKeys"] * response["buyKeyHalfScrap"]
-  const price_ref = (price_half_scrap / 18).toFixed(2);
-  return price_ref;
 }
 
 function buildBptfLink(info) {
