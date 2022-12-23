@@ -202,6 +202,11 @@ function buildProfileDiv(row_parent, id, user) {
   return row_parent;
 }
 
+function abortCurrentJob() {
+  runningTradesJob.cancelJob();
+  runningTradesJob = undefined;
+}
+
 async function displayProfitables() {
   $("#alerts").append(warnAlert.clone().delay(10000).slideUp(2000, function () {
     $(this).alert('close');

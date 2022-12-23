@@ -18,6 +18,10 @@ class PopulateTradesJob {
 
   cancelJob() {
     this.abortController.abort();
+    const abortAlert = $('<div id="listing_alert_abort" class="alert alert-danger alert-dismissible fade show" role="alert"><strong>Search has been stopped.</strong><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
+    $("#alerts").append(abortAlert.clone().delay(10000).slideUp(2000, function () {
+      $(this).alert('close');
+    }));
   }
 
   async run() {
