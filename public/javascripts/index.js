@@ -1,6 +1,12 @@
-var key_value_in_metal_prices, key_value_in_metal_prices_upper;
-var key_value_in_metal_bptf, key_value_in_metal_bptf_upper;
-var key_value_in_metal_scrap, key_value_in_metal_scrap_upper;
+class KeyPriceSnapshot {
+  key_value_in_metal_bptf_lower;
+  key_value_in_metal_bptf_upper;
+  key_value_in_metal_ptf_lower;
+  key_value_in_metal_ptf_upper;
+  key_value_in_metal_scrap_lower;
+  key_value_in_metal_scrap_upper;
+}
+var key_snapshot;
 
 var scrap_unique_discount = 0.982, scrap_unique_buy_ratio = 0.8;
 var scrap_strange_discount = 0.942, scrap_strange_buy_ratio = 0.89;
@@ -24,9 +30,6 @@ const SCRAP_UNIQUE_DISCOUNT = function (ref_val) {
 };
 const SCRAP_UNIQUE_BUY_RATIO = function (ref_val) {
   return ref_val * scrap_unique_buy_ratio;
-};
-const SCRAP_KEY_MARKUP = function (ref_val) {
-  return ref_val + .44;
 };
 
 const warnAlert = $('<div id="listing_alert_warn" class="alert alert-warning alert-dismissible fade show" role="alert"><strong>Beginning...</strong> Calling apis and populating information.<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>');
@@ -77,20 +80,50 @@ $(async function () {
 });
 
 async function manualSetKeyVal() {
-  key_value_in_metal_scrap = roundToNearestScrap(parseFloat($("#key_val_min").val()));
-  key_value_in_metal_scrap_upper = $("#key_val_max").val() ?
-    roundToNearestScrap(parseFloat($("#key_val_max").val())) :
-    roundToNearestScrap(SCRAP_KEY_MARKUP(key_value_in_metal_scrap));
+  const val_min = $("#key_val_min").val();
+  const val_max = $("#key_val_max").val();
+  setKeyVal(
+    roundToNearestScrap(parseFloat(val_min)),
+    roundToNearestScrap(parseFloat(val_max))
+  );
+}
+
+function setKeyVal(lower, upper) {
+  key_snapshot.key_value_in_metal_scrap_lower = lower;
+  key_snapshot.key_value_in_metal_scrap_upper = upper;
   $('#currency_used_price').empty();
-  $('#currency_used_price').append($(`<div>Used Key Price: ${key_value_in_metal_scrap}/${key_value_in_metal_scrap_upper} metal</div>`));
+  $('#currency_used_price').append($(`<div>Used Key Price: ${lower}/${upper} metal</div>`));
+  $('#key_val_min').val(lower);
+  $('#key_val_max').val(upper);
 }
 
 async function refreshKeyProfiles() {
   $('#profiles').empty();
   $('#currency_prices').empty();
   await delay(500); // Helps visually show the refresh
+  key_snapshot = await getKeyPriceSnapshot();
   await displayCurrencies();
   await displayProfiles();
+}
+
+async function getKeyPriceSnapshot() {
+  const result_bptf = await ServerAPI.getBptfKeyPrices();
+  const key_vals_bptf = result_bptf.data["response"]["currencies"]["keys"]["price"];
+  console.log(key_vals_bptf)
+
+  const key_vals = await ServerAPI.getPtfKeyPrices();
+  const key_price_buy = (key_vals["buyHalfScrap"] / 18).toFixed(2);
+  const key_price_sell = (key_vals["sellHalfScrap"] / 18).toFixed(2);
+  
+  const snapshot = new KeyPriceSnapshot();
+  snapshot.key_value_in_metal_bptf_lower = roundToNearestScrap(key_vals_bptf["value"]);
+  snapshot.key_value_in_metal_bptf_upper = roundToNearestScrap(key_vals_bptf["value_high"]);
+  snapshot.key_value_in_metal_ptf_lower = roundToNearestScrap(key_price_buy);
+  snapshot.key_value_in_metal_ptf_upper = roundToNearestScrap(key_price_sell);
+  snapshot.key_value_in_metal_scrap_lower = roundToNearestScrap(key_price_buy);
+  snapshot.key_value_in_metal_scrap_upper = roundToNearestScrap(key_price_sell);
+
+  return snapshot;
 }
 
 function populateScrapPricings() {
@@ -114,25 +147,14 @@ function setStrangeBuyRatio() {
 }
 
 async function displayCurrencies() {
-  const result_bptf = await ServerAPI.getBptfKeyPrices();
-  const key_vals_bptf = result_bptf.data["response"]["currencies"]["keys"]["price"];
-  key_value_in_metal_bptf = roundToNearestScrap(key_vals_bptf["value"]);
-  key_value_in_metal_bptf_upper = roundToNearestScrap(key_vals_bptf["value_high"]);
-  $('#currency_prices').append($(`<div>Backpack.tf Keys: ${key_value_in_metal_bptf}/${key_value_in_metal_bptf_upper} ${key_vals_bptf["currency"]}</div>`));
+  $('#currency_prices').append($(`<div>Backpack.tf Keys: ${key_snapshot.key_value_in_metal_bptf_lower}/${key_snapshot.key_value_in_metal_bptf_upper} metal</div>`));
 
-  const key_vals = await ServerAPI.getPtfKeyPrices();
-  const key_price_buy = (key_vals["buyHalfScrap"] / 18).toFixed(2);
-  const key_price_sell = (key_vals["sellHalfScrap"] / 18).toFixed(2);
-  key_value_in_metal_prices = roundToNearestScrap(key_price_buy);
-  key_value_in_metal_prices_upper = roundToNearestScrap(key_price_sell);
-  $('#currency_prices').append($(`<div>Prices.tf Keys: ${key_value_in_metal_prices}/${key_value_in_metal_prices_upper} metal</div>`));
+  $('#currency_prices').append($(`<div>Prices.tf Keys: ${key_snapshot.key_value_in_metal_ptf_lower}/${key_snapshot.key_value_in_metal_ptf_upper} metal</div>`));
 
-  // Calculated from prices.tf input at first (can be set manually later)
-  key_value_in_metal_scrap = roundToNearestScrap(parseFloat(key_price_buy));
-  key_value_in_metal_scrap_upper = roundToNearestScrap(SCRAP_KEY_MARKUP(key_value_in_metal_scrap));
-  $('#currency_used_price').append($(`<div>Used Key Price: ${key_value_in_metal_scrap}/${key_value_in_metal_scrap_upper} metal</div>`));
-  $('#key_val_min').val(key_value_in_metal_scrap);
-  $('#key_val_max').val(key_value_in_metal_scrap_upper);
+  setKeyVal(
+    key_snapshot.key_value_in_metal_ptf_lower,
+    key_snapshot.key_value_in_metal_ptf_upper
+  );
 }
 
 async function displayProfiles() {
@@ -169,7 +191,7 @@ function buildProfileDiv(row_parent, id, user) {
   var value_div = $(`<div> Total value: ${roundToNearestScrap(tf2_inventory["value"])}</div>`);
   var keys_div = $('<div> Keys: ' + tf2_inventory["keys"].toFixed(2) + "</div>");
   var metal_div = $('<div> Metal: ' + roundToNearestScrap(tf2_inventory["metal"]) + "</div>");
-  var item_val_metal = tf2_inventory["value"] - tf2_inventory["keys"] * key_value_in_metal_bptf - tf2_inventory["metal"];
+  var item_val_metal = tf2_inventory["value"] - tf2_inventory["keys"] * key_snapshot.key_value_in_metal_bptf_upper - tf2_inventory["metal"];
   var item_value_div = $('<div> Items value: ' + roundToNearestScrap(item_val_metal) + "</div>");
   var slots = $('<div> Slots: ' + tf2_inventory["slots"]["used"] + "/" + tf2_inventory["slots"]["total"] + "</div>");
 
@@ -196,6 +218,7 @@ async function displayProfitables() {
   const ignored = await ServerAPI.getIgnoredItems();
 
   runningTradesJob = new PopulateTradesJob(table, all_items, {
+    key_prices: key_snapshot,
     min_metal: min,
     max_metal: max,
     ignored: ignored,
@@ -253,8 +276,8 @@ function toKeyMetalDenomination(ref_val) {
 
   ref_val *= negMult;
 
-  const keys = Math.floor(ref_val / key_value_in_metal_scrap);
-  const remainder_metal = roundToNearestScrap(ref_val % key_value_in_metal_scrap);
+  const keys = Math.floor(ref_val / key_snapshot.key_value_in_metal_scrap_upper);
+  const remainder_metal = roundToNearestScrap(ref_val % key_snapshot.key_value_in_metal_scrap_upper);
   var val_str = "";
   if (keys != 0)
     val_str += `${keys * negMult} Keys + ${remainder_metal * negMult} refined`;

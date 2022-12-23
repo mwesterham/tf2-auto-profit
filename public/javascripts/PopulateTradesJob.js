@@ -5,6 +5,7 @@ class PopulateTradesJob {
     this.tradesTable = table;
     this.all_items = all_items;
 
+    this.key_prices = options.key_prices || 1;
     this.min = options.min_metal || 0;
     this.max = options.max_metal || 0;
     this.ignored = options.ignored || [];
@@ -20,6 +21,8 @@ class PopulateTradesJob {
   }
 
   async run() {
+    this.tradesTable.page( 0 ).draw( false ); // Go to first page
+    this.tradesTable.search(""); // Clear search
     this.tradesTable.clear();
   
     // Construct the item objects
@@ -42,7 +45,7 @@ class PopulateTradesJob {
         if (barterPrice["keys"] || barterPrice["metal"])
           price = 0;
         if (barterPrice["keys"])
-          price += barterPrice["keys"] * key_value_in_metal_scrap_upper; // use the upper scrap metal because this is how much it costs me
+          price += barterPrice["keys"] * this.key_prices.key_value_in_metal_scrap_upper;
         if (barterPrice["metal"])
           price += barterPrice["metal"]
   
@@ -133,7 +136,7 @@ class PopulateTradesJob {
       }
   
       if (item_price["currency"] == "keys")
-        price = price * key_value_in_metal_bptf;
+        price = price * this.key_prices.key_value_in_metal_bptf_lower;
       else if (item_price["currency"] != "metal")
         price = undefined
     }
