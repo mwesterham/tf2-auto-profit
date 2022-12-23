@@ -9,7 +9,7 @@ class KeyPriceSnapshot {
 var key_snapshot;
 
 var scrap_unique_discount = 0.982, scrap_unique_buy_ratio = 0.8;
-var scrap_strange_discount = 0.942, scrap_strange_buy_ratio = 0.89;
+var scrap_strange_discount = 0.9425, scrap_strange_buy_ratio = 0.89;
 
 var table;
 var runningTradesJob = null;
