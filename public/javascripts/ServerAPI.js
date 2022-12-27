@@ -47,7 +47,7 @@ class ServerAPI {
     return result.data;
   }
 
-  static async getPtfPrice(sku, token = undefined) {
+  static async getPtfPrices(sku, token = undefined) {
     if(!token)
       token = await this.getPtfToken();
 
@@ -61,9 +61,7 @@ class ServerAPI {
       }
     });
     const response = result.data;
-    const price_half_scrap = response["buyHalfScrap"] + response["buyKeys"] * response["buyKeyHalfScrap"]
-    const price_ref = (price_half_scrap / 18).toFixed(2);
-    return price_ref;
+    return response;
   }
 
   static async getPtfKeyPrices(token = undefined) {

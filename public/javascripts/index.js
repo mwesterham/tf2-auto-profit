@@ -55,6 +55,7 @@ $(async function () {
       {},
       {},
       {},
+      {},
     ],
     order: [[7, 'desc']],
   });
@@ -244,8 +245,8 @@ function formatDT(d) {
   var body = $('<tbody>');
   table.append(body);
 
-  const rowNames = ['null', 'Item Name', 'Item SKU', 'Backpack.tf Price', 'Scrap.tf Price', 'Profit Threshold', 'Lowest Listing', 'Potential Profit'];
-  for (i = 3; i < 8; i++) {
+  const rowNames = ['null', 'Item Name', 'Item SKU', 'Backpack.tf Price', 'Scrap.tf Price', 'Profit Threshold', 'Lowest Listing', 'Potential Profit', 'Trading Delta'];
+  for (i = 3; i < rowNames.length; i++) {
     var row = $('<tr>');
     row.append($('<td>').text(rowNames[i]));
     row.append($('<td>').text(d[i]));

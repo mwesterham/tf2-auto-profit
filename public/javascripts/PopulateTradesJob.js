@@ -35,6 +35,7 @@ class PopulateTradesJob {
     for (const listing_promise of this.tradesGenerator(all_item_infos, this.min, this.max)) {
       const listings = await listing_promise;
       const info = listings.metainfo;
+      const ptf_prices = this.parsePtfInfo(listings.ptf_result);
   
       await this.delay(1100);
 
@@ -81,6 +82,7 @@ class PopulateTradesJob {
             this.roundToNearestScrap(profit_threshold), // Maximum allowed
             this.roundToNearestScrap(price), // Lowest listing
             this.roundToNearestScrap(potentialProfit), //Potential profit
+            this.roundToNearestScrap(ptf_prices.sell_ref - ptf_prices.buy_ref), // pricing difference according to ptf
           ]).draw(false);
         }
       }
@@ -162,8 +164,11 @@ class PopulateTradesJob {
   }
 
   async getListings(info, item) {
-    const json_result = await ServerAPI.getBptfListings(item);;
+    const json_result = await ServerAPI.getBptfListings(item);
     json_result.metainfo = info;
+
+    const pricetf_result = await ServerAPI.getPtfPrices(info.skus[0]);
+    json_result.ptf_result = pricetf_result;
     return json_result;
   }
 
@@ -179,6 +184,19 @@ class PopulateTradesJob {
     ref_val = parseFloat(ref_val);
     const val = Math.round(ref_val * 9) / 9;
     return truncateDecimals(val, 2);
+  }
+
+  parsePtfInfo(prices) {
+    const buy_price_half_scrap = prices["buyHalfScrap"] + prices["buyKeys"] * prices["buyKeyHalfScrap"]
+    const buy_ref = (buy_price_half_scrap / 18).toFixed(2);
+
+    const sell_price_half_scrap = prices["sellHalfScrap"] + prices["sellKeys"] * prices["sellKeyHalfScrap"]
+    const sell_ref = (sell_price_half_scrap / 18).toFixed(2);
+
+    return {
+      buy_ref,
+      sell_ref
+    }
   }
 
   delay(time) {
