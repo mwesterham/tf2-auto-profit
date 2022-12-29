@@ -159,7 +159,7 @@ async function displayCurrencies() {
 }
 
 async function displayProfiles() {
-  const json_result = await ServerAPI.getBptfProfileInfo("76561198080592800,76561199092421012");
+  const json_result = await ServerAPI.getBptfProfileInfo("76561198080592800,76561199092421012,76561199440883623");
 
   var row_parent = $("<div>", {
     class: "row formatted-row",
