@@ -33,58 +33,64 @@ class PopulateTradesJob {
     var all_item_infos = await this.getAllItemInfo();
   
     for (const listing_promise of this.tradesGenerator(all_item_infos, this.min, this.max)) {
-      const listings = await listing_promise;
-      const info = listings.metainfo;
-      const ptf_prices = this.parsePtfInfo(listings.ptf_result);
-  
-      await this.delay(1100);
+      try {
+        const listings = await listing_promise;
+        const info = listings.metainfo;
+        const ptf_prices = this.parsePtfInfo(listings.ptf_result);
+    
+        await this.delay(1100);
 
-      if (this.abortController.signal.aborted){
-        return Promise.reject(new DOMException("Aborted", "AbortError"));
-      }
-  
-      if (listings["listings"] && listings["listings"][0]["intent"] == "sell") {
-        // Calculate price manually since bptf prices for keys are not always up to snuff
-        var barterPrice = listings["listings"][0]["currencies"];
-        var price = undefined;
-        if (barterPrice["keys"] || barterPrice["metal"])
-          price = 0;
-        if (barterPrice["keys"])
-          price += barterPrice["keys"] * this.key_prices.key_value_in_metal_scrap_upper;
-        if (barterPrice["metal"])
-          price += barterPrice["metal"]
-  
-        var profit_threshold = 0; // This is the pricing scheme of scrap.tf
-        if (price) {
-          var scraptf_price = info.bp_price;
-          switch (info.quality_idx) {
-            case STRANGE_INDEX:
-              scraptf_price = this.SCRAP_STRANGE_DISCOUNT(scraptf_price);
-              profit_threshold = this.SCRAP_STRANGE_BUY_RATIO(scraptf_price);
-              break;
-            case UNIQUE_INDEX:
-              scraptf_price = this.SCRAP_UNIQUE_DISCOUNT(scraptf_price);
-              profit_threshold = this.SCRAP_UNIQUE_BUY_RATIO(scraptf_price);
-              break;
-          }
-          var potentialProfit = profit_threshold - price;
-  
-          var sku_links = [];
-          for (let i = 0; i < info.skus.length; i++) {
-            sku_links.push(`<div><a href="${"https://prices.tf/items/" + info.skus[i]}" target="_blank">${info.skus[i]} </a></div>`);
-          }
-          table.row.add([
-            null,
-            `<a href="${this.buildBptfLink(info)}" target="_blank">${info.quality} ${info.item} </a>`,
-            sku_links.join("\n"),
-            this.roundToNearestScrap(info.bp_price), // Backpack.tf price
-            this.roundToNearestScrap(scraptf_price), // Scrap.tf price
-            this.roundToNearestScrap(profit_threshold), // Maximum allowed
-            this.roundToNearestScrap(price), // Lowest listing
-            this.roundToNearestScrap(potentialProfit), //Potential profit
-            this.roundToNearestScrap(ptf_prices.sell_ref - ptf_prices.buy_ref), // pricing difference according to ptf
-          ]).draw(false);
+        if (this.abortController.signal.aborted){
+          return Promise.reject(new DOMException("Aborted", "AbortError"));
         }
+    
+        if (listings["listings"] && listings["listings"][0]["intent"] == "sell") {
+          // Calculate price manually since bptf prices for keys are not always up to snuff
+          var barterPrice = listings["listings"][0]["currencies"];
+          var price = undefined;
+          if (barterPrice["keys"] || barterPrice["metal"])
+            price = 0;
+          if (barterPrice["keys"])
+            price += barterPrice["keys"] * this.key_prices.key_value_in_metal_scrap_upper;
+          if (barterPrice["metal"])
+            price += barterPrice["metal"]
+    
+          var profit_threshold = 0; // This is the pricing scheme of scrap.tf
+          if (price) {
+            var scraptf_price = info.bp_price;
+            switch (info.quality_idx) {
+              case STRANGE_INDEX:
+                scraptf_price = this.SCRAP_STRANGE_DISCOUNT(scraptf_price);
+                profit_threshold = this.SCRAP_STRANGE_BUY_RATIO(scraptf_price);
+                break;
+              case UNIQUE_INDEX:
+                scraptf_price = this.SCRAP_UNIQUE_DISCOUNT(scraptf_price);
+                profit_threshold = this.SCRAP_UNIQUE_BUY_RATIO(scraptf_price);
+                break;
+            }
+            var potentialProfit = profit_threshold - price;
+    
+            var sku_links = [];
+            for (let i = 0; i < info.skus.length; i++) {
+              sku_links.push(`<div><a href="${"https://prices.tf/items/" + info.skus[i]}" target="_blank">${info.skus[i]} </a></div>`);
+            }
+            table.row.add([
+              null,
+              `<a href="${this.buildBptfLink(info)}" target="_blank">${info.quality} ${info.item} </a>`,
+              sku_links.join("\n"),
+              this.roundToNearestScrap(info.bp_price), // Backpack.tf price
+              this.roundToNearestScrap(scraptf_price), // Scrap.tf price
+              this.roundToNearestScrap(profit_threshold), // Maximum allowed
+              this.roundToNearestScrap(price), // Lowest listing
+              this.roundToNearestScrap(potentialProfit), //Potential profit
+              this.roundToNearestScrap(ptf_prices.sell_ref - ptf_prices.buy_ref), // pricing difference according to ptf
+            ]).draw(false);
+          }
+        }
+      }
+      catch(e) {
+        console.log(e);
+        console.log("Moving to next listing.");
       }
     }
   }
