@@ -52,7 +52,7 @@ app.get('/get_profile', async function (req, res) {
          url: backpackURLs["base"] + backpackURLs["operations"]["user_info"],
          method: 'GET',
          params: {
-            key: CONFIG.BPTF_API_KEY,
+            key: process.env.BPTF_API_KEY || CONFIG.BPTF_API_KEY,
             steamids: ids,
          }
       });
@@ -104,7 +104,7 @@ app.get('/get_bptf_currency', async function (req, res) {
          url: backpackURLs["base"] + backpackURLs["operations"]["get_currency"],
          method: 'GET',
          params: {
-            key: CONFIG.BPTF_API_KEY,
+            key: process.env.BPTF_API_KEY || CONFIG.BPTF_API_KEY,
          }
       });
       res.send(result.data);
@@ -141,7 +141,7 @@ app.get('/get_bptf_prices', async function (req, res) {
          url: backpackURLs["base"] + backpackURLs["operations"]["price_schema"],
          method: 'GET',
          params: {
-            key: CONFIG.BPTF_API_KEY,
+            key: process.env.BPTF_API_KEY || CONFIG.BPTF_API_KEY,
          }
       });
       res.send(result.data);
@@ -158,7 +158,7 @@ app.get('/get_listing', async function (req, res) {
          url: backpackURLs["base"] + backpackURLs["operations"]["get_listing"],
          method: 'GET',
          params: {
-            token: CONFIG.BPTF_API_TOKEN,
+            token: process.env.BPTF_API_TOKEN || CONFIG.BPTF_API_TOKEN,
             sku: sku,
             appid: "440",
          }
