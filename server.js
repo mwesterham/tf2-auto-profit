@@ -1,22 +1,21 @@
 // Imports
 var fs = require('fs');
+var http = require('http');
 var https = require('https');
 var axios = require('axios');
 var jsyaml = require('js-yaml');
 var logger = require("log4js").getLogger();
 logger.level = "debug";
 
-// Get SSL certification
-var privateKey  = fs.readFileSync('sslcert/server-localhost-key.pem', 'utf8');
-var certificate = fs.readFileSync('sslcert/server-localhost.pem', 'utf8');
-var credentials = {key: privateKey, cert: certificate};
+// Get config
+const CONFIG = JSON.parse(fs.readFileSync('config.json'));
 
 // Get config
-var _pricesURLs = fs.readFileSync('config/pricestf_constants.yml', 'utf8');
+var _pricesURLs = fs.readFileSync('api_config/pricestf_constants.yml', 'utf8');
 var pricesURLs = jsyaml.load(_pricesURLs);
-var _backpackURLs = fs.readFileSync('config/backpacktf_constants.yml', 'utf8');
+var _backpackURLs = fs.readFileSync('api_config/backpacktf_constants.yml', 'utf8');
 var backpackURLs = jsyaml.load(_backpackURLs);
-var ignoredItems = fs.readFileSync('config/ignore.json', 'utf8');
+var ignoredItems = fs.readFileSync('api_config/ignore.json', 'utf8');
 
 // App initialization
 var express = require('express');
@@ -47,13 +46,13 @@ app.get('/info', function (req, res) {
 
 // External API calls callable via javascript
 app.get('/get_profile', async function (req, res) {
-   var ids = req.query.steamids;
+   var ids = req.query.steamids || CONFIG.APP.PROFILES_OF_INTEREST.join(",");
    try {
       const result = await axios({
          url: backpackURLs["base"] + backpackURLs["operations"]["user_info"],
          method: 'GET',
          params: {
-            key: process.env.BPTF_API_KEY,
+            key: CONFIG.BPTF_API_KEY,
             steamids: ids,
          }
       });
@@ -105,7 +104,7 @@ app.get('/get_bptf_currency', async function (req, res) {
          url: backpackURLs["base"] + backpackURLs["operations"]["get_currency"],
          method: 'GET',
          params: {
-            key: process.env.BPTF_API_KEY,
+            key: CONFIG.BPTF_API_KEY,
          }
       });
       res.send(result.data);
@@ -142,7 +141,7 @@ app.get('/get_bptf_prices', async function (req, res) {
          url: backpackURLs["base"] + backpackURLs["operations"]["price_schema"],
          method: 'GET',
          params: {
-            key: process.env.BPTF_API_KEY,
+            key: CONFIG.BPTF_API_KEY,
          }
       });
       res.send(result.data);
@@ -159,7 +158,7 @@ app.get('/get_listing', async function (req, res) {
          url: backpackURLs["base"] + backpackURLs["operations"]["get_listing"],
          method: 'GET',
          params: {
-            token: process.env.BPTF_API_TOKEN,
+            token: CONFIG.BPTF_API_TOKEN,
             sku: sku,
             appid: "440",
          }
@@ -176,10 +175,21 @@ app.get('/get_ignore', async function (req, res) {
 });
 
 // Build server
-var httpsServer = https.createServer(credentials, app);
-var server = httpsServer.listen(3000, function () {
+let server;
+// Get SSL certification (if applicable)
+if(CONFIG.USE_HTTPS) {
+   var privateKey  = fs.readFileSync('sslcert/server-localhost-key.pem', 'utf8');
+   var certificate = fs.readFileSync('sslcert/server-localhost.pem', 'utf8');
+   var credentials = {key: privateKey, cert: certificate};
+   server = https.createServer(credentials, app);
+}
+else {
+   server = http.createServer(app);
+}
+
+server.listen(CONFIG.PORT, function () {
    var host = "localhost";
    var port = server.address().port;
    
-   logger.debug("Example app listening at https://%s:%s", host, port);
+   logger.debug("Example app listening at %s://%s:%s", CONFIG.USE_HTTPS ? "https" : "http", host, port);
 })
