@@ -1,0 +1,11 @@
+services:
+  app:
+    image: node:18-alpine
+    command: sh -c "npm install && node server.js"
+    ports:
+      - 127.0.0.1:3000:3000
+    working_dir: /tf2-auto-profit
+    volumes:
+      - ./:/tf2-auto-profit
+    env_file:
+      - .env.test

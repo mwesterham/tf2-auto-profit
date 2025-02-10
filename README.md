@@ -94,3 +94,21 @@ If all is well, you should see something like this:
 `[2023-01-25T20:00:41.957] [DEBUG] default - Example app listening at http://localhost:3000`
 
 Navigate to http://localhost:3000 to view your trade website!
+
+## Running the Website with Docker Helpful commands
+
+`docker build -t mwesterham/generic:tf2-auto-profit .`
+
+`docker login --username mwesterham`
+
+`docker push mwesterham/generic:tf2-auto-profit`
+
+`docker run -dp 127.0.0.1:3000:3000 mwesterham/generic:tf2-auto-profit`
+
+`docker rm -f <CONTAINER_ID>`
+
+`docker compose up -d`
+
+Then open `http://127.0.0.1:3000/`
+
+`docker compose down`

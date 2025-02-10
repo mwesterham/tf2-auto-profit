@@ -8,7 +8,15 @@ var logger = require("log4js").getLogger();
 logger.level = "debug";
 
 // Get config
-const CONFIG = JSON.parse(fs.readFileSync('config.json'));
+const CONFIG = {
+   "BPTF_API_KEY": process.env.BPTF_API_KEY,
+   "BPTF_API_TOKEN": process.env.BPTF_API_TOKEN,
+   "USE_HTTPS": process.env.USE_HTTPS,
+   "PORT": parseInt(process.env.PORT ?? 3000),
+   "APP": {
+       "PROFILES_OF_INTEREST": process.env.PROFILES_OF_INTEREST ? process.env.PROFILES_OF_INTEREST.split(",") : []
+   }
+};
 
 // Get config
 var _pricesURLs = fs.readFileSync('api_config/pricestf_constants.yml', 'utf8');
@@ -177,7 +185,7 @@ app.get('/get_ignore', async function (req, res) {
 // Build server
 let server;
 // Get SSL certification (if applicable)
-if(CONFIG.USE_HTTPS) {
+if(CONFIG.USE_HTTPS === "true") {
    var privateKey  = fs.readFileSync('sslcert/server-localhost-key.pem', 'utf8');
    var certificate = fs.readFileSync('sslcert/server-localhost.pem', 'utf8');
    var credentials = {key: privateKey, cert: certificate};
